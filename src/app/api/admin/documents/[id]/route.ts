@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import type { DocumentType } from "@prisma/client";
 
 async function requireAdmin() {
   const session = await getSession();
@@ -19,7 +18,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const document = await db.document.update({
     where: { id },
-    data: { type: type as DocumentType, title, url, isActive },
+    data: { type: type as string, title, url, isActive },
   });
 
   return NextResponse.json({ document });

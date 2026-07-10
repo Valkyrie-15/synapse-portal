@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import type { DocumentType } from "@prisma/client";
 
 async function requireAdmin() {
   const session = await getSession();
@@ -37,7 +36,7 @@ export async function POST(request: NextRequest) {
   }
 
   const document = await db.document.create({
-    data: { insurerId, type: type as DocumentType, title, url },
+    data: { insurerId, type: type as string, title, url },
   });
 
   return NextResponse.json({ document }, { status: 201 });
