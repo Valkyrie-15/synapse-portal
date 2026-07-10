@@ -288,13 +288,13 @@ async function main() {
     { code: "RAKSHA_TPA",    pending: 24, approved: 128, queries: 13, rejected: 8,  todaysClaims: 11, monthlyClaims: 173, alReceived: 121, enhancementPending: 8,  dischargePending: 11, paymentReceived: 114, totalAmountApproved: 3840000, totalAmountReceived: 3590000, totalAmountDeducted: 250000, totalCasesProcessed: 173, totalApprovedCases: 128, totalDeniedCases: 8  },
   ];
 
-  for (const s of claimsData) {
-    const insurerId = insurers[s.code];
+  for (const { code, ...stats } of claimsData) {
+    const insurerId = insurers[code];
     if (!insurerId) continue;
     await db.claimsStats.upsert({
       where: { insurerId },
-      update: { ...s, insurerId: undefined, code: undefined },
-      create: { insurerId, ...s, code: undefined },
+      update: { ...stats },
+      create: { insurerId, ...stats },
     });
   }
   console.log(`✅ Claims stats: ${claimsData.length} seeded`);
