@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import type { DocumentType } from "@prisma/client";
+
+async function requireAdmin() {
+  const session = await getSession();
+  if (!session || session.role !== "ADMIN") return null;
+  return session;
+}
+
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireAdmin();
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { id } = await params;
+  const body = await request.json();
+  const { type, title, url, isActive } = body;
+
+  const document = await db.document.update({
+    where: { id },
+    data: { type: type as DocumentType, title, url, isActive },
+  });
+
+  return NextResponse.json({ document });
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireAdmin();
+  if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { id } = await params;
+  await db.document.delete({ where: { id } });
+
+  return NextResponse.json({ success: true });
+}

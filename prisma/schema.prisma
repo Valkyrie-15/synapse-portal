@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  role      String   @default("USER")
+  name      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Insurer {
+  id          String       @id @default(cuid())
+  name        String
+  code        String       @unique
+  logoUrl     String?
+  portalUrl   String?
+  isActive    Boolean      @default(true)
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  documents   Document[]
+  contacts    Contact[]
+  commercials Commercial[]
+  claimsStats ClaimsStats?
+}
+
+model Document {
+  id        String       @id @default(cuid())
+  insurerId String
+  type      String
+  title     String
+  url       String
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  insurer   Insurer      @relation(fields: [insurerId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  insurerId String
+  name      String
+  role      String
+  email     String?
+  phone     String?
+  mobile    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  insurer   Insurer  @relation(fields: [insurerId], references: [id], onDelete: Cascade)
+}
+
+model Commercial {
+  id              String   @id @default(cuid())
+  insurerId       String
+  category        String
+  description     String
+  discountPercent Float?
+  packageRate     Float?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  insurer         Insurer  @relation(fields: [insurerId], references: [id], onDelete: Cascade)
+}
+
+model ClaimsStats {
+  id                  String   @id @default(cuid())
+  insurerId           String   @unique
+  pending             Int      @default(0)
+  approved            Int      @default(0)
+  queries             Int      @default(0)
+  rejected            Int      @default(0)
+  todaysClaims        Int      @default(0)
+  monthlyClaims       Int      @default(0)
+  alReceived          Int      @default(0)
+  enhancementPending  Int      @default(0)
+  dischargePending    Int      @default(0)
+  paymentReceived     Int      @default(0)
+  totalAmountApproved Float    @default(0)
+  totalAmountReceived Float    @default(0)
+  totalAmountDeducted Float    @default(0)
+  totalCasesProcessed Int      @default(0)
+  totalApprovedCases  Int      @default(0)
+  totalDeniedCases    Int      @default(0)
+  updatedAt           DateTime @updatedAt
+  insurer             Insurer  @relation(fields: [insurerId], references: [id], onDelete: Cascade)
+}
