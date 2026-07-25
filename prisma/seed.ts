@@ -39,14 +39,14 @@ async function main() {
     {
       name: "Vitraya Health",
       code: "VITRAYA",
-      portalUrl: "https://insurer.vitraya.com/login",
+      portalUrl: "https://vhi.vitraya.com/preAuth/claims",
       sortOrder: 1,
       isActive: false,
     },
     {
       name: "Star Health Insurance",
       code: "STAR_HEALTH",
-      portalUrl: "https://insurer.vitraya.com/login",
+      portalUrl: "https://vhi.vitraya.com/preAuth/claims",
       sortOrder: 2,
     },
     {
