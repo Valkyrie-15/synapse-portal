@@ -82,7 +82,7 @@ async function main() {
     {
       name: "FHPL",
       code: "FHPL",
-      portalUrl: "https://www.fhpl.net",
+      portalUrl: "https://epreauth.fhpl.net/SearchPreauths.aspx",
       sortOrder: 8,
     },
     {
@@ -102,6 +102,24 @@ async function main() {
       code: "RAKSHA_TPA",
       portalUrl: "https://www.rakshatpa.com",
       sortOrder: 11,
+    },
+    {
+      name: "IHX",
+      code: "IHX",
+      portalUrl: "https://provider.ihx.in/claims/in-patient",
+      sortOrder: 12,
+    },
+    {
+      name: "Volo Health TPA",
+      code: "VOLO_HEALTH",
+      portalUrl: "https://provider.volohealthtpa.com/home",
+      sortOrder: 13,
+    },
+    {
+      name: "Health India TPA",
+      code: "HEALTH_INDIA",
+      portalUrl: "https://www.healthindiatpa.com/Provider/Dashboard.aspx",
+      sortOrder: 14,
     },
   ];
 
@@ -286,6 +304,9 @@ async function main() {
     { code: "MD_INDIA",      pending: 29, approved: 156, queries: 14, rejected: 9,  todaysClaims: 14, monthlyClaims: 208, alReceived: 148, enhancementPending: 10, dischargePending: 13, paymentReceived: 140, totalAmountApproved: 4670000, totalAmountReceived: 4370000, totalAmountDeducted: 300000, totalCasesProcessed: 208, totalApprovedCases: 156, totalDeniedCases: 9  },
     { code: "PARAMOUNT",     pending: 37, approved: 175, queries: 21, rejected: 14, todaysClaims: 16, monthlyClaims: 247, alReceived: 166, enhancementPending: 13, dischargePending: 16, paymentReceived: 157, totalAmountApproved: 5230000, totalAmountReceived: 4890000, totalAmountDeducted: 340000, totalCasesProcessed: 247, totalApprovedCases: 175, totalDeniedCases: 14 },
     { code: "RAKSHA_TPA",    pending: 24, approved: 128, queries: 13, rejected: 8,  todaysClaims: 11, monthlyClaims: 173, alReceived: 121, enhancementPending: 8,  dischargePending: 11, paymentReceived: 114, totalAmountApproved: 3840000, totalAmountReceived: 3590000, totalAmountDeducted: 250000, totalCasesProcessed: 173, totalApprovedCases: 128, totalDeniedCases: 8  },
+    { code: "IHX",           pending: 31, approved: 164, queries: 16, rejected: 10, todaysClaims: 14, monthlyClaims: 221, alReceived: 156, enhancementPending: 11, dischargePending: 14, paymentReceived: 148, totalAmountApproved: 4920000, totalAmountReceived: 4600000, totalAmountDeducted: 320000, totalCasesProcessed: 221, totalApprovedCases: 164, totalDeniedCases: 10 },
+    { code: "VOLO_HEALTH",   pending: 19, approved: 98,  queries: 10, rejected: 6,  todaysClaims: 9,  monthlyClaims: 133, alReceived: 93,  enhancementPending: 6,  dischargePending: 8,  paymentReceived: 87,  totalAmountApproved: 2940000, totalAmountReceived: 2750000, totalAmountDeducted: 190000, totalCasesProcessed: 133, totalApprovedCases: 98,  totalDeniedCases: 6  },
+    { code: "HEALTH_INDIA",  pending: 26, approved: 141, queries: 13, rejected: 9,  todaysClaims: 12, monthlyClaims: 189, alReceived: 134, enhancementPending: 9,  dischargePending: 12, paymentReceived: 126, totalAmountApproved: 4220000, totalAmountReceived: 3950000, totalAmountDeducted: 270000, totalCasesProcessed: 189, totalApprovedCases: 141, totalDeniedCases: 9  },
   ];
 
   for (const { code, ...stats } of claimsData) {
