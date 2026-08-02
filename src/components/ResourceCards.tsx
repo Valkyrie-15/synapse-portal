@@ -11,6 +11,7 @@ import {
   Phone,
   HelpCircle,
   Loader2,
+  Mail,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,29 +82,26 @@ export default function ResourceCards({
           Portal Access
         </h3>
         <Card
-          className={cn(
-            "border-2 transition-all duration-200",
-            portalUrl
-              ? "border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 hover:border-blue-400 hover:shadow-md cursor-pointer"
-              : "border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"
-          )}
+          className="border-2 transition-all duration-200 border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 hover:border-blue-400 hover:shadow-md cursor-pointer"
           onClick={() => {
-            if (portalUrl) window.open(portalUrl, "_blank", "noopener,noreferrer");
+            const dest = portalUrl ?? "https://mail.google.com/";
+            window.open(dest, "_blank", "noopener,noreferrer");
           }}
         >
           <div className="p-5 flex items-center gap-4">
-            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 flex-shrink-0 shadow">
-              <ExternalLink className="w-6 h-6 text-white" />
+            <div className={cn("flex items-center justify-center w-12 h-12 rounded-xl flex-shrink-0 shadow", portalUrl ? "bg-blue-600" : "bg-rose-500")}>
+              {portalUrl
+                ? <ExternalLink className="w-6 h-6 text-white" />
+                : <Mail className="w-6 h-6 text-white" />
+              }
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h4 className="font-semibold text-slate-800">Portal Link</h4>
-                {portalUrl && (
-                  <Badge variant="success" className="text-xs">Active</Badge>
-                )}
+                <h4 className="font-semibold text-slate-800">{portalUrl ? "Portal Link" : "Open Gmail"}</h4>
+                <Badge variant="success" className="text-xs">Active</Badge>
               </div>
               <p className="text-sm text-slate-500 truncate mt-0.5">
-                {portalUrl ? `Open ${insurerName} provider portal` : "Portal URL not configured"}
+                {portalUrl ? `Open ${insurerName} provider portal` : `${insurerName} communicates via email`}
               </p>
             </div>
             {portalUrl && (
