@@ -25,14 +25,14 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const { name, code, portalUrl, logoUrl, sortOrder } = body;
+  const { name, code, portalUrl, logoUrl, sortOrder, portalUsername, portalPassword } = body;
 
   if (!name || !code) {
     return NextResponse.json({ error: "Name and code are required" }, { status: 400 });
   }
 
   const insurer = await db.insurer.create({
-    data: { name, code, portalUrl, logoUrl, sortOrder: sortOrder ?? 0 },
+    data: { name, code, portalUrl, logoUrl, sortOrder: sortOrder ?? 0, portalUsername, portalPassword },
   });
 
   return NextResponse.json({ insurer }, { status: 201 });

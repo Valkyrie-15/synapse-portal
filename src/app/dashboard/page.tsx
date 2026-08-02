@@ -50,6 +50,8 @@ export default function DashboardPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [commercials, setCommercials] = useState<Commercial[]>([]);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
+  const [portalUsername, setPortalUsername] = useState<string | null>(null);
+  const [portalPassword, setPortalPassword] = useState<string | null>(null);
   const [claimsStats, setClaimsStats] = useState<ClaimsStats | null>(null);
   const [aggregateStats, setAggregateStats] = useState<ClaimsStats | null>(null);
 
@@ -85,6 +87,8 @@ export default function DashboardPage() {
     setContacts([]);
     setCommercials([]);
     setPortalUrl(null);
+    setPortalUsername(null);
+    setPortalPassword(null);
     setClaimsStats(null);
     try {
       const res = await fetch(`/api/dashboard?insurerId=${insurerId}`);
@@ -92,6 +96,8 @@ export default function DashboardPage() {
         const data = await res.json();
         const ins = data.insurer;
         setPortalUrl(ins.portalUrl || null);
+        setPortalUsername(ins.portalUsername || null);
+        setPortalPassword(ins.portalPassword || null);
         setDocuments(ins.documents || []);
         setContacts(ins.contacts || []);
         setCommercials(ins.commercials || []);
@@ -176,6 +182,8 @@ export default function DashboardPage() {
             ) : (
               <ResourceCards
                 portalUrl={portalUrl}
+                portalUsername={portalUsername}
+                portalPassword={portalPassword}
                 documents={documents}
                 contacts={contacts}
                 loading={loading}

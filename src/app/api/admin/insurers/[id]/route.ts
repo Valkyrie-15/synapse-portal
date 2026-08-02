@@ -14,11 +14,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
   const body = await request.json();
-  const { name, code, portalUrl, logoUrl, isActive, sortOrder } = body;
+  const { name, code, portalUrl, logoUrl, isActive, sortOrder, portalUsername, portalPassword } = body;
 
   const insurer = await db.insurer.update({
     where: { id },
-    data: { name, code, portalUrl, logoUrl, isActive, sortOrder },
+    data: { name, code, portalUrl, logoUrl, isActive, sortOrder, portalUsername, portalPassword },
   });
 
   return NextResponse.json({ insurer });

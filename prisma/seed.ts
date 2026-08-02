@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 const db = new PrismaClient();
 
-const REMOVED_CODES = ["ICICI_LOMBARD", "HDFC_ERGO", "VIDAL_HEALTH", "PARAMOUNT", "RAKSHA_TPA"];
+const REMOVED_CODES = ["ICICI_LOMBARD", "HDFC_ERGO", "VIDAL_HEALTH", "RAKSHA_TPA"];
 
 async function main() {
   console.log("🌱 Seeding database...");
@@ -35,14 +35,16 @@ async function main() {
   // Insurers
   const insurerData = [
     { name: "Vitraya Health",        code: "VITRAYA",      portalUrl: "https://vhi.vitraya.com/preAuth/claims",                     sortOrder: 1,  isActive: false },
-    { name: "Star Health Insurance",  code: "STAR_HEALTH",  portalUrl: "https://vhi.vitraya.com/preAuth/claims",                     sortOrder: 2 },
-    { name: "Niva Bupa",             code: "NIVA_BUPA",    portalUrl: null,                                                          sortOrder: 3 },
-    { name: "Medi Assist",           code: "MEDI_ASSIST",  portalUrl: null,                                                          sortOrder: 4 },
-    { name: "FHPL",                  code: "FHPL",         portalUrl: "https://epreauth.fhpl.net/SearchPreauths.aspx",               sortOrder: 5 },
-    { name: "MD India",              code: "MD_INDIA",     portalUrl: null,                                                          sortOrder: 6 },
-    { name: "IHX",                   code: "IHX",          portalUrl: "https://provider.ihx.in/claims/in-patient",                   sortOrder: 7 },
-    { name: "Volo Health TPA",       code: "VOLO_HEALTH",  portalUrl: "https://provider.volohealthtpa.com/home",                     sortOrder: 8 },
-    { name: "Health India TPA",      code: "HEALTH_INDIA", portalUrl: "https://www.healthindiatpa.com/Provider/Dashboard.aspx",      sortOrder: 9 },
+    { name: "Star Health Insurance",  code: "STAR_HEALTH",  portalUrl: "https://vhi.vitraya.com/?returnUrl=%2FpreAuth%2Fclaims",              sortOrder: 2 },
+    { name: "Niva Bupa",             code: "NIVA_BUPA",    portalUrl: null,                                                                      sortOrder: 3 },
+    { name: "Medi Assist",           code: "MEDI_ASSIST",  portalUrl: null,                                                                      sortOrder: 4 },
+    { name: "FHPL",                  code: "FHPL",         portalUrl: "https://epreauth.fhpl.net/SearchPreauths.aspx",                           sortOrder: 5 },
+    { name: "MD India",              code: "MD_INDIA",     portalUrl: null,                                                                      sortOrder: 6 },
+    { name: "Oriented Insurance (IHX)", code: "IHX",       portalUrl: "https://provider.ihx.in/",                                               sortOrder: 7 },
+    { name: "Volo Health TPA",       code: "VOLO_HEALTH",  portalUrl: "https://provider.volohealthtpa.com/home",                                 sortOrder: 8 },
+    { name: "Health India TPA",      code: "HEALTH_INDIA", portalUrl: "https://www.healthindiatpa.com/Logins/LoginProvider.aspx",                sortOrder: 9 },
+    { name: "NVGT Care",             code: "NVGT_CARE",    portalUrl: "https://nvgtcare.com/MyAccount/Signin",                                   sortOrder: 10 },
+    { name: "Paramount TPA",         code: "PARAMOUNT",    portalUrl: "https://provider.paramounttpa.com/",                                      sortOrder: 11 },
   ];
 
   const insurers: Record<string, string> = {};
@@ -151,6 +153,8 @@ async function main() {
     { code: "IHX",          pending: 31, approved: 164, queries: 16, rejected: 10, todaysClaims: 14, monthlyClaims: 221, alReceived: 156, enhancementPending: 11, dischargePending: 14, paymentReceived: 148, totalAmountApproved: 4920000, totalAmountReceived: 4600000, totalAmountDeducted: 320000, totalCasesProcessed: 221, totalApprovedCases: 164, totalDeniedCases: 10 },
     { code: "VOLO_HEALTH",  pending: 19, approved: 98,  queries: 10, rejected: 6,  todaysClaims: 9,  monthlyClaims: 133, alReceived: 93,  enhancementPending: 6,  dischargePending: 8,  paymentReceived: 87,  totalAmountApproved: 2940000, totalAmountReceived: 2750000, totalAmountDeducted: 190000, totalCasesProcessed: 133, totalApprovedCases: 98,  totalDeniedCases: 6  },
     { code: "HEALTH_INDIA", pending: 26, approved: 141, queries: 13, rejected: 9,  todaysClaims: 12, monthlyClaims: 189, alReceived: 134, enhancementPending: 9,  dischargePending: 12, paymentReceived: 126, totalAmountApproved: 4220000, totalAmountReceived: 3950000, totalAmountDeducted: 270000, totalCasesProcessed: 189, totalApprovedCases: 141, totalDeniedCases: 9  },
+    { code: "NVGT_CARE",   pending: 21, approved: 118, queries: 11, rejected: 7,  todaysClaims: 10, monthlyClaims: 157, alReceived: 112, enhancementPending: 7,  dischargePending: 9,  paymentReceived: 105, totalAmountApproved: 3510000, totalAmountReceived: 3280000, totalAmountDeducted: 230000, totalCasesProcessed: 157, totalApprovedCases: 118, totalDeniedCases: 7  },
+    { code: "PARAMOUNT",   pending: 37, approved: 175, queries: 21, rejected: 14, todaysClaims: 16, monthlyClaims: 247, alReceived: 166, enhancementPending: 13, dischargePending: 16, paymentReceived: 157, totalAmountApproved: 5230000, totalAmountReceived: 4890000, totalAmountDeducted: 340000, totalCasesProcessed: 247, totalApprovedCases: 175, totalDeniedCases: 14 },
   ];
 
   for (const { code, ...stats } of claimsData) {

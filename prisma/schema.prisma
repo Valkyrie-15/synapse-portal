@@ -22,7 +22,9 @@ model Insurer {
   name        String
   code        String       @unique
   logoUrl     String?
-  portalUrl   String?
+  portalUrl      String?
+  portalUsername String?
+  portalPassword String?
   isActive    Boolean      @default(true)
   sortOrder   Int          @default(0)
   createdAt   DateTime     @default(now())
