@@ -37,9 +37,9 @@ async function main() {
     { name: "Vitraya Health",                      code: "VITRAYA",       portalUrl: "https://vhi.vitraya.com/preAuth/claims",                   sortOrder: 1,  isActive: false },
     { name: "Star Health Insurance",               code: "STAR_HEALTH",   portalUrl: "https://vhi.vitraya.com/?returnUrl=%2FpreAuth%2Fclaims",   sortOrder: 2 },
     { name: "Niva Bupa",                           code: "NIVA_BUPA",     portalUrl: "https://hospital.vitraya.com/",                            sortOrder: 3 },
-    { name: "Medi Assist TPA",                     code: "MEDI_ASSIST",   portalUrl: null,                                                       sortOrder: 4 },
+    { name: "Medi Assist TPA",                     code: "MEDI_ASSIST",   portalUrl: null,                                                       sortOrder: 4,  isActive: false },
     { name: "FHPL",                                code: "FHPL",          portalUrl: "https://epreauth.fhpl.net/SearchPreauths.aspx",            sortOrder: 5 },
-    { name: "MD India",                            code: "MD_INDIA",      portalUrl: null,                                                       sortOrder: 6 },
+    { name: "MD India",                            code: "MD_INDIA",      portalUrl: null,                                                       sortOrder: 6,  isActive: false },
     { name: "Oriental Insurance (IHX)",            code: "IHX",           portalUrl: "https://provider.ihx.in/",                                 sortOrder: 7 },
     { name: "Volo Health Insurance TPA Pvt. Ltd",  code: "VOLO_HEALTH",   portalUrl: "https://provider.volohealthtpa.com/home",                  sortOrder: 8 },
     { name: "Healthindia Insurance TPA",           code: "HEALTH_INDIA",  portalUrl: "https://www.healthindiatpa.com/Logins/LoginProvider.aspx", sortOrder: 9 },
@@ -47,6 +47,7 @@ async function main() {
     { name: "Paramount TPA",                       code: "PARAMOUNT",     portalUrl: "https://provider.paramounttpa.com/",                       sortOrder: 11 },
     { name: "United India Insurance",              code: "UNITED_INDIA",  portalUrl: "https://provider.ihx.in/",                                 sortOrder: 12 },
     { name: "Aditya Birla Health Insurance",       code: "ADITYA_BIRLA",  portalUrl: "https://provider.ihx.in/",                                 sortOrder: 13 },
+    { name: "Heritage Health Insurance TPA",       code: "HERITAGE_HEALTH", portalUrl: null,                                                     sortOrder: 14 },
   ];
 
   const insurers: Record<string, string> = {};
