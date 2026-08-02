@@ -153,19 +153,16 @@ export default function DashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Building2 className="w-4 h-4" />
-                  <span>Dashboard</span>
-                  <ChevronRight className="w-4 h-4" />
-                  <span className="text-slate-800 font-semibold">{selectedInsurer.name}</span>
-                </div>
+              <div className="flex items-center gap-2 text-sm mb-6">
                 <button
                   onClick={() => { setSelectedInsurerId(""); setSelectedInsurer(null); }}
-                  className="ml-2 text-xs text-blue-600 hover:underline"
+                  className="flex items-center gap-1.5 text-slate-500 hover:text-blue-600 transition-colors"
                 >
-                  Change
+                  <Building2 className="w-4 h-4" />
+                  <span>Dashboard</span>
                 </button>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+                <span className="text-slate-800 font-semibold">{selectedInsurer.name}</span>
               </div>
             )}
 
