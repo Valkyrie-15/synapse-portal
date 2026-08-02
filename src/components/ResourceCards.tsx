@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   ExternalLink,
   FileText,
@@ -12,10 +11,6 @@ import {
   Phone,
   HelpCircle,
   Loader2,
-  Copy,
-  Check,
-  User,
-  KeyRound,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,32 +35,12 @@ type Contact = {
 
 interface ResourceCardsProps {
   portalUrl: string | null;
-  portalUsername: string | null;
-  portalPassword: string | null;
   documents: Document[];
   contacts: Contact[];
   loading: boolean;
   insurerName: string;
 }
 
-function CopyField({ label, value, icon: Icon }: { label: string; value: string; icon: React.ElementType }) {
-  const [copied, setCopied] = useState(false);
-  function copy() {
-    navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-  return (
-    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2">
-      <Icon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-      <span className="text-xs text-slate-500 w-16 flex-shrink-0">{label}</span>
-      <span className="text-sm font-mono text-slate-800 flex-1 truncate">{value}</span>
-      <button onClick={copy} className="flex-shrink-0 text-slate-400 hover:text-blue-600 transition-colors">
-        {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-      </button>
-    </div>
-  );
-}
 
 const docTypeMap: Record<string, { label: string; icon: React.ElementType; color: string; bg: string }> = {
   HOSPITAL_CONTRACT: { label: "Hospital Contract", icon: FileText, color: "text-blue-700", bg: "bg-blue-50" },
@@ -79,8 +54,6 @@ const docTypeMap: Record<string, { label: string; icon: React.ElementType; color
 
 export default function ResourceCards({
   portalUrl,
-  portalUsername,
-  portalPassword,
   documents,
   contacts,
   loading,
@@ -139,13 +112,6 @@ export default function ResourceCards({
           </div>
         </Card>
 
-        {/* Credentials */}
-        {(portalUsername || portalPassword) && (
-          <div className="mt-3 space-y-2">
-            {portalUsername && <CopyField label="User ID" value={portalUsername} icon={User} />}
-            {portalPassword && <CopyField label="Password" value={portalPassword} icon={KeyRound} />}
-          </div>
-        )}
       </div>
 
       {/* Documents grid */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ResourceCards from "@/components/ResourceCards";
@@ -12,12 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, ChevronRight, Copy, Check, User as UserIcon, KeyRound } from "lucide-react";
+import { Building2, ChevronRight } from "lucide-react";
 import HospitalOverview from "@/components/HospitalOverview";
-import { toast } from "sonner";
 
 type User = { username: string; name: string; role: string };
-type Insurer = { id: string; name: string; code: string; portalUsername?: string | null; portalPassword?: string | null };
+type Insurer = { id: string; name: string; code: string };
 type ClaimsStats = {
   pending: number;
   approved: number;
@@ -40,42 +39,6 @@ type Document = { id: string; type: string; title: string; url: string; isActive
 type Contact = { id: string; name: string; role: string; email?: string | null; phone?: string | null; mobile?: string | null };
 type Commercial = { id: string; category: string; description: string; discountPercent?: number | null; packageRate?: number | null };
 
-function CredentialChip({
-  label,
-  value,
-  icon: Icon,
-  onCopy,
-}: {
-  label: string;
-  value: string;
-  icon: React.ElementType;
-  onCopy: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  function copy() {
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true);
-      onCopy();
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }
-  return (
-    <button
-      onClick={copy}
-      className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs hover:border-blue-300 hover:bg-blue-50 transition-colors group"
-    >
-      <Icon className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-500" />
-      <span className="text-slate-500">{label}:</span>
-      <span className="font-mono text-slate-800 max-w-[120px] truncate">{value}</span>
-      {copied ? (
-        <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-      ) : (
-        <Copy className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 group-hover:text-blue-500" />
-      )}
-    </button>
-  );
-}
-
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -87,8 +50,6 @@ export default function DashboardPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [commercials, setCommercials] = useState<Commercial[]>([]);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
-  const [portalUsername, setPortalUsername] = useState<string | null>(null);
-  const [portalPassword, setPortalPassword] = useState<string | null>(null);
   const [claimsStats, setClaimsStats] = useState<ClaimsStats | null>(null);
   const [aggregateStats, setAggregateStats] = useState<ClaimsStats | null>(null);
 
@@ -124,8 +85,6 @@ export default function DashboardPage() {
     setContacts([]);
     setCommercials([]);
     setPortalUrl(null);
-    setPortalUsername(null);
-    setPortalPassword(null);
     setClaimsStats(null);
     try {
       const res = await fetch(`/api/dashboard?insurerId=${insurerId}`);
@@ -133,8 +92,6 @@ export default function DashboardPage() {
         const data = await res.json();
         const ins = data.insurer;
         setPortalUrl(ins.portalUrl || null);
-        setPortalUsername(ins.portalUsername || null);
-        setPortalPassword(ins.portalPassword || null);
         setDocuments(ins.documents || []);
         setContacts(ins.contacts || []);
         setCommercials(ins.commercials || []);
@@ -149,11 +106,6 @@ export default function DashboardPage() {
     setSelectedInsurerId(value);
     const ins = insurers.find((i) => i.id === value) || null;
     setSelectedInsurer(ins);
-    if (ins?.portalUsername) {
-      navigator.clipboard.writeText(ins.portalUsername).then(() => {
-        toast.success(`User ID copied: ${ins.portalUsername}`);
-      });
-    }
     if (value) loadInsurerData(value);
   }
 
@@ -170,12 +122,9 @@ export default function DashboardPage() {
       <Navbar user={user} />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Main content */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto p-6">
-            {/* Breadcrumb / insurer header */}
             {!selectedInsurer ? (
-              /* Selector — only shown before an insurer is chosen */
               <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6 shadow-sm">
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
@@ -201,57 +150,27 @@ export default function DashboardPage() {
                 </div>
               </div>
             ) : (
-              /* Insurer header with breadcrumb + credential chips */
-              <div className="bg-white rounded-xl border border-slate-200 p-4 mb-6 shadow-sm">
-                <div className="flex items-center flex-wrap gap-3">
-                  {/* Breadcrumb */}
-                  <div className="flex items-center gap-2 text-sm text-slate-500 flex-shrink-0">
-                    <Building2 className="w-4 h-4" />
-                    <span>Dashboard</span>
-                    <ChevronRight className="w-4 h-4" />
-                    <span className="text-slate-800 font-semibold">{selectedInsurer.name}</span>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
-
-                  {/* Credential chips — available instantly from dropdown selection */}
-                  {selectedInsurer.portalUsername && (
-                    <CredentialChip
-                      label="User ID"
-                      value={selectedInsurer.portalUsername}
-                      icon={UserIcon}
-                      onCopy={() => toast.success("User ID copied")}
-                    />
-                  )}
-                  {selectedInsurer.portalPassword && (
-                    <CredentialChip
-                      label="Password"
-                      value={selectedInsurer.portalPassword}
-                      icon={KeyRound}
-                      onCopy={() => toast.success("Password copied")}
-                    />
-                  )}
-
-                  {/* Change button pushed to right */}
-                  <button
-                    onClick={() => { setSelectedInsurerId(""); setSelectedInsurer(null); }}
-                    className="ml-auto text-xs text-blue-600 hover:underline flex-shrink-0"
-                  >
-                    Change
-                  </button>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <Building2 className="w-4 h-4" />
+                  <span>Dashboard</span>
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="text-slate-800 font-semibold">{selectedInsurer.name}</span>
                 </div>
+                <button
+                  onClick={() => { setSelectedInsurerId(""); setSelectedInsurer(null); }}
+                  className="ml-2 text-xs text-blue-600 hover:underline"
+                >
+                  Change
+                </button>
               </div>
             )}
 
-            {/* Resource area */}
             {!selectedInsurerId ? (
               <HospitalOverview stats={aggregateStats} />
             ) : (
               <ResourceCards
                 portalUrl={portalUrl}
-                portalUsername={portalUsername}
-                portalPassword={portalPassword}
                 documents={documents}
                 contacts={contacts}
                 loading={loading}
@@ -261,7 +180,6 @@ export default function DashboardPage() {
           </div>
         </main>
 
-        {/* Right sidebar — only when an insurer is selected */}
         {selectedInsurerId && (
           <aside className="w-80 flex-shrink-0 border-l border-slate-200 bg-white overflow-y-auto">
             <div className="p-4">

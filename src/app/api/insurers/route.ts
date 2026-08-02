@@ -11,7 +11,7 @@ export async function GET() {
   const insurers = await db.insurer.findMany({
     where: { isActive: true },
     orderBy: { sortOrder: "asc" },
-    select: { id: true, name: true, code: true, logoUrl: true, portalUsername: true, portalPassword: true },
+    select: { id: true, name: true, code: true, logoUrl: true },
   });
 
   return NextResponse.json({ insurers });
