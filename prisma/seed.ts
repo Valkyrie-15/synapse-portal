@@ -45,8 +45,8 @@ async function main() {
     { name: "Healthindia Insurance TPA",           code: "HEALTH_INDIA",  portalUrl: "https://www.healthindiatpa.com/Logins/LoginProvider.aspx", sortOrder: 9 },
     { name: "NVGT Care",                           code: "NVGT_CARE",     portalUrl: "https://nvgtcare.com/MyAccount/Signin",                    sortOrder: 10 },
     { name: "Paramount TPA",                       code: "PARAMOUNT",     portalUrl: "https://provider.paramounttpa.com/",                       sortOrder: 11 },
-    { name: "United India Insurance",              code: "UNITED_INDIA",  portalUrl: null,                                                       sortOrder: 12 },
-    { name: "Aditya Birla Health Insurance",       code: "ADITYA_BIRLA",  portalUrl: null,                                                       sortOrder: 13 },
+    { name: "United India Insurance",              code: "UNITED_INDIA",  portalUrl: "https://provider.ihx.in/",                                 sortOrder: 12 },
+    { name: "Aditya Birla Health Insurance",       code: "ADITYA_BIRLA",  portalUrl: "https://provider.ihx.in/",                                 sortOrder: 13 },
   ];
 
   const insurers: Record<string, string> = {};
