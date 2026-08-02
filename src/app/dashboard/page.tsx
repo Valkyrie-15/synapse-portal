@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ResourceCards from "@/components/ResourceCards";
@@ -12,11 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, ChevronRight } from "lucide-react";
+import { Building2, ChevronRight, Copy, Check, User as UserIcon, KeyRound } from "lucide-react";
 import HospitalOverview from "@/components/HospitalOverview";
+import { toast } from "sonner";
 
 type User = { username: string; name: string; role: string };
-type Insurer = { id: string; name: string; code: string };
+type Insurer = { id: string; name: string; code: string; portalUsername?: string | null; portalPassword?: string | null };
 type ClaimsStats = {
   pending: number;
   approved: number;
@@ -38,6 +39,42 @@ type ClaimsStats = {
 type Document = { id: string; type: string; title: string; url: string; isActive: boolean };
 type Contact = { id: string; name: string; role: string; email?: string | null; phone?: string | null; mobile?: string | null };
 type Commercial = { id: string; category: string; description: string; discountPercent?: number | null; packageRate?: number | null };
+
+function CredentialChip({
+  label,
+  value,
+  icon: Icon,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  icon: React.ElementType;
+  onCopy: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      onCopy();
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <button
+      onClick={copy}
+      className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+    >
+      <Icon className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-500" />
+      <span className="text-slate-500">{label}:</span>
+      <span className="font-mono text-slate-800 max-w-[120px] truncate">{value}</span>
+      {copied ? (
+        <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+      ) : (
+        <Copy className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 group-hover:text-blue-500" />
+      )}
+    </button>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -112,6 +149,11 @@ export default function DashboardPage() {
     setSelectedInsurerId(value);
     const ins = insurers.find((i) => i.id === value) || null;
     setSelectedInsurer(ins);
+    if (ins?.portalUsername) {
+      navigator.clipboard.writeText(ins.portalUsername).then(() => {
+        toast.success(`User ID copied: ${ins.portalUsername}`);
+      });
+    }
     if (value) loadInsurerData(value);
   }
 
@@ -159,20 +201,46 @@ export default function DashboardPage() {
                 </div>
               </div>
             ) : (
-              /* Insurer header with breadcrumb + change button */
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Building2 className="w-4 h-4" />
-                  <span>Dashboard</span>
-                  <ChevronRight className="w-4 h-4" />
-                  <span className="text-slate-800 font-semibold">{selectedInsurer.name}</span>
+              /* Insurer header with breadcrumb + credential chips */
+              <div className="bg-white rounded-xl border border-slate-200 p-4 mb-6 shadow-sm">
+                <div className="flex items-center flex-wrap gap-3">
+                  {/* Breadcrumb */}
+                  <div className="flex items-center gap-2 text-sm text-slate-500 flex-shrink-0">
+                    <Building2 className="w-4 h-4" />
+                    <span>Dashboard</span>
+                    <ChevronRight className="w-4 h-4" />
+                    <span className="text-slate-800 font-semibold">{selectedInsurer.name}</span>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="h-5 w-px bg-slate-200 flex-shrink-0" />
+
+                  {/* Credential chips — available instantly from dropdown selection */}
+                  {selectedInsurer.portalUsername && (
+                    <CredentialChip
+                      label="User ID"
+                      value={selectedInsurer.portalUsername}
+                      icon={UserIcon}
+                      onCopy={() => toast.success("User ID copied")}
+                    />
+                  )}
+                  {selectedInsurer.portalPassword && (
+                    <CredentialChip
+                      label="Password"
+                      value={selectedInsurer.portalPassword}
+                      icon={KeyRound}
+                      onCopy={() => toast.success("Password copied")}
+                    />
+                  )}
+
+                  {/* Change button pushed to right */}
+                  <button
+                    onClick={() => { setSelectedInsurerId(""); setSelectedInsurer(null); }}
+                    className="ml-auto text-xs text-blue-600 hover:underline flex-shrink-0"
+                  >
+                    Change
+                  </button>
                 </div>
-                <button
-                  onClick={() => { setSelectedInsurerId(""); setSelectedInsurer(null); }}
-                  className="ml-2 text-xs text-blue-600 hover:underline"
-                >
-                  Change
-                </button>
               </div>
             )}
 
