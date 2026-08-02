@@ -25,6 +25,7 @@ model Insurer {
   portalUrl      String?
   portalUsername String?
   portalPassword String?
+  driveUrl       String?
   isActive    Boolean      @default(true)
   sortOrder   Int          @default(0)
   createdAt   DateTime     @default(now())

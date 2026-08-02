@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Loader2,
   Mail,
+  Upload,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ type Contact = {
 
 interface ResourceCardsProps {
   portalUrl: string | null;
+  driveUrl: string | null;
   documents: Document[];
   contacts: Contact[];
   loading: boolean;
@@ -55,6 +57,7 @@ const docTypeMap: Record<string, { label: string; icon: React.ElementType; color
 
 export default function ResourceCards({
   portalUrl,
+  driveUrl,
   documents,
   contacts,
   loading,
@@ -110,6 +113,30 @@ export default function ResourceCards({
           </div>
         </Card>
 
+        {/* Upload to shared drive */}
+        <Card
+          className="mt-3 border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-100 hover:border-emerald-400 hover:shadow-md cursor-pointer transition-all duration-200"
+          onClick={() => {
+            const dest = driveUrl ?? "https://drive.google.com/";
+            window.open(dest, "_blank", "noopener,noreferrer");
+          }}
+        >
+          <div className="p-5 flex items-center gap-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-600 flex-shrink-0 shadow">
+              <Upload className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-slate-800">Upload Documents</h4>
+                <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200">Shared Drive</Badge>
+              </div>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Upload claim documents to the shared {insurerName} drive
+              </p>
+            </div>
+            <ExternalLink className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+          </div>
+        </Card>
       </div>
 
       {/* Documents grid */}

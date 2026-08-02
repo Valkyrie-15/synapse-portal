@@ -50,6 +50,7 @@ export default function DashboardPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [commercials, setCommercials] = useState<Commercial[]>([]);
   const [portalUrl, setPortalUrl] = useState<string | null>(null);
+  const [driveUrl, setDriveUrl] = useState<string | null>(null);
   const [claimsStats, setClaimsStats] = useState<ClaimsStats | null>(null);
   const [aggregateStats, setAggregateStats] = useState<ClaimsStats | null>(null);
 
@@ -85,6 +86,7 @@ export default function DashboardPage() {
     setContacts([]);
     setCommercials([]);
     setPortalUrl(null);
+    setDriveUrl(null);
     setClaimsStats(null);
     try {
       const res = await fetch(`/api/dashboard?insurerId=${insurerId}`);
@@ -92,6 +94,7 @@ export default function DashboardPage() {
         const data = await res.json();
         const ins = data.insurer;
         setPortalUrl(ins.portalUrl || null);
+        setDriveUrl(ins.driveUrl || null);
         setDocuments(ins.documents || []);
         setContacts(ins.contacts || []);
         setCommercials(ins.commercials || []);
@@ -171,6 +174,7 @@ export default function DashboardPage() {
             ) : (
               <ResourceCards
                 portalUrl={portalUrl}
+                driveUrl={driveUrl}
                 documents={documents}
                 contacts={contacts}
                 loading={loading}
