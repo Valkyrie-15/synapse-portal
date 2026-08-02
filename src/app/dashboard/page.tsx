@@ -127,6 +127,18 @@ export default function DashboardPage() {
       <div className="flex flex-1 overflow-hidden">
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto p-6">
+            {/* Hospital identity banner */}
+            <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 mb-4 shadow-sm flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center flex-shrink-0 p-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/Pulse_Logo.png" alt="Pulse Superspeciality Hospital" className="w-full h-full object-contain" />
+              </div>
+              <div>
+                <h2 className="text-slate-800 font-bold text-base leading-tight">Pulse Superspeciality Hospital</h2>
+                <p className="text-slate-500 text-sm leading-tight">Satara, Maharashtra</p>
+              </div>
+            </div>
+
             {!selectedInsurer ? (
               <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6 shadow-sm">
                 <div className="flex items-center gap-4 flex-wrap">

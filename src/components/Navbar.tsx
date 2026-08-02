@@ -34,18 +34,6 @@ export default function Navbar({ user }: NavbarProps) {
         </div>
       </div>
 
-      {/* Hospital identity — center */}
-      <div className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
-        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white p-1 shadow">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/Pulse_Logo.png" alt="Pulse Superspeciality Hospital" className="w-full h-full object-contain" />
-        </div>
-        <div>
-          <p className="text-white font-semibold text-sm leading-tight">Pulse Superspeciality Hospital</p>
-          <p className="text-blue-300 text-xs leading-tight">Satara, Maharashtra</p>
-        </div>
-      </div>
-
       {/* Right side */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-800/60 border border-blue-700/50">
