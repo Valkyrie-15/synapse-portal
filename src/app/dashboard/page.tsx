@@ -16,6 +16,7 @@ import { Building2, ChevronRight } from "lucide-react";
 import HospitalOverview from "@/components/HospitalOverview";
 
 type User = { username: string; name: string; role: string };
+type Hospital = { id: string; name: string; code: string; city: string | null; logoUrl: string | null };
 type Insurer = { id: string; name: string; code: string };
 type ClaimsStats = {
   pending: number;
@@ -42,6 +43,7 @@ type Commercial = { id: string; category: string; description: string; discountP
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [hospital, setHospital] = useState<Hospital | null>(null);
   const [insurers, setInsurers] = useState<Insurer[]>([]);
   const [selectedInsurerId, setSelectedInsurerId] = useState<string>("");
   const [selectedInsurer, setSelectedInsurer] = useState<Insurer | null>(null);
@@ -67,6 +69,7 @@ export default function DashboardPage() {
       }
       const meData = await meRes.json();
       setUser(meData.user);
+      setHospital(meData.hospital);
 
       if (insurersRes.ok) {
         const data = await insurersRes.json();
@@ -128,16 +131,22 @@ export default function DashboardPage() {
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto p-6">
             {/* Hospital identity banner */}
-            <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 mb-4 shadow-sm flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center flex-shrink-0 p-1">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/Pulse_Logo.png" alt="Pulse Superspeciality Hospital" className="w-full h-full object-contain" />
+            {hospital && (
+              <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 mb-4 shadow-sm flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center flex-shrink-0 p-1">
+                  {hospital.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={hospital.logoUrl} alt={hospital.name} className="w-full h-full object-contain" />
+                  ) : (
+                    <Building2 className="w-7 h-7 text-blue-600" />
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-slate-800 font-bold text-base leading-tight">{hospital.name}</h2>
+                  {hospital.city && <p className="text-slate-500 text-sm leading-tight">{hospital.city}</p>}
+                </div>
               </div>
-              <div>
-                <h2 className="text-slate-800 font-bold text-base leading-tight">Pulse Superspeciality Hospital</h2>
-                <p className="text-slate-500 text-sm leading-tight">Satara, Maharashtra</p>
-              </div>
-            </div>
+            )}
 
             {!selectedInsurer ? (
               <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6 shadow-sm">

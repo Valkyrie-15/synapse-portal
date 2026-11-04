@@ -4,7 +4,7 @@ A production-quality enterprise healthcare dashboard for managing cashless insur
 
 ## Features
 
-- **Multi-insurer dashboard** — Vitraya, Star Health, ICICI Lombard, HDFC Ergo, Niva Bupa, Medi Assist, Vidal Health, FHPL, MD India, Paramount, Raksha TPA
+- **Multi-insurer dashboard** — Star Health (testing) plus all tied-up insurers & TPAs from the Insurance Tie-Up sheet (IHX-based insurers, Bajaj, Care, Generali, Tata AIG, Medi Assist, MD India, FHPL, Paramount, East West Assist, Health India, Medsave, Ericson, HITPA, etc.)
 - **Vitraya working integration** — opens the official provider portal in a new tab
 - **Resource cards** — Portal Link, Hospital Contract, Surgical Packages, SOP, Circulars, Cashless Manual, Escalation Matrix, Contact Details, FAQs
 - **Analytics sidebar** — Recharts pie chart + bar chart with real claims stats per insurer

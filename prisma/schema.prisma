@@ -7,14 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model Hospital {
   id        String   @id @default(cuid())
-  username  String   @unique
-  password  String
-  role      String   @default("USER")
-  name      String   @default("")
+  name      String
+  code      String   @unique
+  city      String?
+  logoUrl   String?
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  users     User[]
+}
+
+model User {
+  id         String    @id @default(cuid())
+  username   String    @unique
+  password   String
+  role       String    @default("USER")
+  name       String    @default("")
+  hospitalId String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  hospital   Hospital? @relation(fields: [hospitalId], references: [id], onDelete: SetNull)
 }
 
 model Insurer {

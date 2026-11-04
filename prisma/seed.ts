@@ -3,7 +3,11 @@ import bcrypt from "bcryptjs";
 
 const db = new PrismaClient();
 
-const REMOVED_CODES = ["ICICI_LOMBARD", "HDFC_ERGO", "VIDAL_HEALTH", "RAKSHA_TPA"];
+const REMOVED_CODES = ["VIDAL_HEALTH", "RAKSHA_TPA", "NIVA_BUPA", "NVGT_CARE", "HERITAGE_HEALTH", "ICICI_LOMBARD"];
+
+const IHX_URL  = "https://provider.ihx.in/";
+const IHX_USER = "insuajinkyatara@gmail.com";
+const IHX_PASS = "ihx@123";
 
 async function main() {
   console.log("🌱 Seeding database...");
@@ -14,40 +18,78 @@ async function main() {
     data: { isActive: false },
   });
 
+  // Hospitals
+  const hospitalData = [
+    { code: "PULSE",       name: "Pulse Superspeciality Hospital",      city: "Satara, Maharashtra", logoUrl: "/Pulse_Logo.png" },
+    { code: "AJINKYATARA", name: "Ajinkyatara Multi-speciality Hospital", city: null,                logoUrl: "/logos/ajinkyatara-icon.png" },
+  ];
+
+  const hospitals: Record<string, string> = {};
+  for (const h of hospitalData) {
+    const record = await db.hospital.upsert({
+      where:  { code: h.code },
+      update: { name: h.name, city: h.city, logoUrl: h.logoUrl },
+      create: h,
+    });
+    hospitals[h.code] = record.id;
+    console.log(`  ✅ Hospital: ${h.name}`);
+  }
+
   // Users
-  const adminHash = await bcrypt.hash("admin123", 12);
-  const userHash  = await bcrypt.hash("user123", 12);
+  const userData = [
+    { username: "admin",       password: "admin123",     role: "ADMIN", name: "Administrator",                    hospital: "PULSE" },
+    { username: "user",        password: "user123",      role: "USER",  name: "User",                             hospital: "PULSE" },
+    { username: "ajinkyatara", password: "XNxFvv38xHCf", role: "USER",  name: "Ajinkyatara Multi-speciality Hospital", hospital: "AJINKYATARA" },
+  ];
 
-  const admin = await db.user.upsert({
-    where:  { username: "admin" },
-    update: {},
-    create: { username: "admin", password: adminHash, role: "ADMIN", name: "Administrator" },
-  });
+  for (const u of userData) {
+    const hospitalId = hospitals[u.hospital];
+    // Existing passwords are never overwritten on re-seed
+    await db.user.upsert({
+      where:  { username: u.username },
+      update: { name: u.name, hospitalId },
+      create: { username: u.username, password: await bcrypt.hash(u.password, 12), role: u.role, name: u.name, hospitalId },
+    });
+  }
 
-  const regularUser = await db.user.upsert({
-    where:  { username: "user" },
-    update: { name: "User" },
-    create: { username: "user", password: userHash, role: "USER", name: "User" },
-  });
-
-  console.log(`✅ Users: ${admin.username}, ${regularUser.username}`);
+  console.log(`✅ Users: ${userData.map((u) => u.username).join(", ")}`);
 
   // Insurers
-  const insurerData = [
-    { name: "Vitraya Health",                      code: "VITRAYA",       portalUrl: "https://vhi.vitraya.com/preAuth/claims",                   sortOrder: 1,  isActive: false },
-    { name: "Star Health Insurance",               code: "STAR_HEALTH",   portalUrl: "https://vhi.vitraya.com/?returnUrl=%2FpreAuth%2Fclaims",   sortOrder: 2 },
-    { name: "Niva Bupa",                           code: "NIVA_BUPA",     portalUrl: "https://hospital.vitraya.com/",                            sortOrder: 3 },
-    { name: "Medi Assist TPA",                     code: "MEDI_ASSIST",   portalUrl: null,                                                       sortOrder: 4,  isActive: false },
-    { name: "FHPL",                                code: "FHPL",          portalUrl: "https://epreauth.fhpl.net/SearchPreauths.aspx",            sortOrder: 5 },
-    { name: "MD India",                            code: "MD_INDIA",      portalUrl: null,                                                       sortOrder: 6,  isActive: false },
-    { name: "Oriental Insurance (IHX)",            code: "IHX",           portalUrl: "https://provider.ihx.in/",                                 sortOrder: 7 },
-    { name: "Volo Health Insurance TPA Pvt. Ltd",  code: "VOLO_HEALTH",   portalUrl: "https://provider.volohealthtpa.com/home",                  sortOrder: 8 },
-    { name: "Healthindia Insurance TPA",           code: "HEALTH_INDIA",  portalUrl: "https://www.healthindiatpa.com/Logins/LoginProvider.aspx", sortOrder: 9 },
-    { name: "NVGT Care",                           code: "NVGT_CARE",     portalUrl: "https://nvgtcare.com/MyAccount/Signin",                    sortOrder: 10 },
-    { name: "Paramount TPA",                       code: "PARAMOUNT",     portalUrl: "https://provider.paramounttpa.com/",                       sortOrder: 11 },
-    { name: "United India Insurance",              code: "UNITED_INDIA",  portalUrl: "https://provider.ihx.in/",                                 sortOrder: 12 },
-    { name: "Aditya Birla Health Insurance",       code: "ADITYA_BIRLA",  portalUrl: "https://provider.ihx.in/",                                 sortOrder: 13 },
-    { name: "Heritage Health Insurance TPA",       code: "HERITAGE_HEALTH", portalUrl: null,                                                     sortOrder: 14 },
+  // Source: "Insurance Tie Up Information.xlsx" (tie-ups marked Y). Star Health kept for testing.
+  // portalUrl null => insurer communicates via email (see contacts below).
+  const ihx = { portalUrl: IHX_URL, portalUsername: IHX_USER, portalPassword: IHX_PASS };
+  const insurerData: { name: string; code: string; portalUrl: string | null; portalUsername?: string | null; portalPassword?: string | null; sortOrder: number; isActive?: boolean }[] = [
+    { name: "Vitraya Health",                                     code: "VITRAYA",            portalUrl: "https://vhi.vitraya.com/preAuth/claims", sortOrder: 0, isActive: false },
+    { name: "Star Health Insurance",                              code: "STAR_HEALTH",        portalUrl: "https://vhi.vitraya.com/?returnUrl=%2FpreAuth%2Fclaims", sortOrder: 1 },
+    // Insurance companies
+    { name: "National Insurance Company Ltd",                     code: "NATIONAL_INSURANCE", ...ihx, sortOrder: 2 },
+    { name: "The New India Assurance Co. Ltd",                    code: "NEW_INDIA",          ...ihx, sortOrder: 3 },
+    { name: "The Oriental Insurance Co. Ltd",                     code: "IHX",                ...ihx, sortOrder: 4 },
+    { name: "United India Insurance Co. Ltd",                     code: "UNITED_INDIA",       ...ihx, sortOrder: 5 },
+    { name: "ACKO General Insurance Limited",                     code: "ACKO",               ...ihx, sortOrder: 6 },
+    { name: "Aditya Birla Health Insurance Company Limited",      code: "ADITYA_BIRLA",       ...ihx, sortOrder: 7 },
+    { name: "Bajaj Allianz General Insurance Company Limited",    code: "BAJAJ_ALLIANZ",      ...ihx, sortOrder: 8 },
+    { name: "Bajaj Allianz (Hospital Portal)",                    code: "BAJAJ_ALLIANZ_SELF", portalUrl: null, portalUsername: "ajinkya138236@hat.co.in", portalPassword: "ajinkya138236", sortOrder: 9 },
+    { name: "Care Health Insurance Company Limited",              code: "CARE_HEALTH",        ...ihx, sortOrder: 10 },
+    { name: "Care Health (Care Portal)",                          code: "CARE_HEALTH_SELF",   portalUrl: null, portalUsername: "23850951", portalPassword: "babar11520226", sortOrder: 11 },
+    { name: "Generali Central Insurance Company Limited",         code: "GENERALI_CENTRAL",   portalUrl: null, portalUsername: "h587746", portalPassword: "FGH@123", sortOrder: 12 },
+    { name: "Go Digit General Insurance Limited",                 code: "GO_DIGIT",           ...ihx, sortOrder: 13 },
+    { name: "HDFC Ergo General Insurance Company Limited",        code: "HDFC_ERGO",          ...ihx, sortOrder: 14 },
+    { name: "Liberty General Insurance Limited",                  code: "LIBERTY",            ...ihx, sortOrder: 15 },
+    { name: "Magma General Insurance Limited",                    code: "MAGMA",              ...ihx, sortOrder: 16 },
+    { name: "Reliance General Insurance Company Limited",         code: "RELIANCE_GENERAL",   ...ihx, sortOrder: 17 },
+    { name: "SBI General Insurance Company Limited",              code: "SBI_GENERAL",        ...ihx, sortOrder: 18 },
+    { name: "Tata AIG General Insurance Company Limited",         code: "TATA_AIG",           portalUrl: null, sortOrder: 19 },
+    // TPAs
+    { name: "Medi Assist Insurance TPA Private Limited",          code: "MEDI_ASSIST",        ...ihx, sortOrder: 20 },
+    { name: "MD India Health Insurance TPA Private Limited",      code: "MD_INDIA",           ...ihx, sortOrder: 21 },
+    { name: "Family Health Plan Insurance TPA Private Limited",   code: "FHPL",               portalUrl: "https://epreauth.fhpl.net/SearchPreauths.aspx", sortOrder: 22 },
+    { name: "Paramount Health Services & Insurance TPA Private Limited", code: "PARAMOUNT",   ...ihx, sortOrder: 23 },
+    { name: "East West Assist Insurance TPA Private Limited",     code: "VOLO_HEALTH",        portalUrl: "https://provider.volohealthtpa.com/home", portalUsername: "PRV7811_2", portalPassword: "Volo@10092026", sortOrder: 24 },
+    { name: "Medsave Health Insurance TPA Limited",               code: "MEDSAVE",            portalUrl: null, sortOrder: 25 },
+    { name: "Health India Insurance TPA Services Private Limited", code: "HEALTH_INDIA",      portalUrl: "https://www.healthindiatpa.com/Logins/LoginProvider.aspx", portalUsername: "74936", portalPassword: "74936", sortOrder: 26 },
+    { name: "Ericson Insurance TPA Private Limited",              code: "ERICSON",            portalUrl: null, sortOrder: 27 },
+    { name: "Health Insurance TPA of India Limited",              code: "HITPA",              portalUrl: null, sortOrder: 28 },
   ];
 
   const insurers: Record<string, string> = {};
@@ -55,7 +97,7 @@ async function main() {
   for (const ins of insurerData) {
     const record = await db.insurer.upsert({
       where:  { code: ins.code },
-      update: { name: ins.name, portalUrl: ins.portalUrl, isActive: ins.isActive ?? true, sortOrder: ins.sortOrder },
+      update: { name: ins.name, portalUrl: ins.portalUrl, portalUsername: ins.portalUsername ?? null, portalPassword: ins.portalPassword ?? null, isActive: ins.isActive ?? true, sortOrder: ins.sortOrder },
       create: { ...ins, isActive: ins.isActive ?? true },
     });
     insurers[ins.code] = record.id;
@@ -113,6 +155,14 @@ async function main() {
     { code: "MEDI_ASSIST",  name: "Santosh Kumar",   role: "Claims Manager",                email: "claims@mediassist.in",         phone: "+91 80 4120 0001", mobile: null },
     { code: "FHPL",         name: "Rashmi Joshi",    role: "Network Manager",               email: "rashmi.joshi@fhpl.net",        phone: "+91 40 6660 0000", mobile: "+91 94400 00000" },
     { code: "MD_INDIA",     name: "Naresh Gupta",    role: "Claims Head",                   email: "naresh.gupta@mdindia.com",     phone: "+91 80 4090 0000", mobile: "+91 98450 11111" },
+    // Email-based cashless desks (from tie-up sheet)
+    { code: "RELIANCE_GENERAL", name: "Healthcare Desk", role: "Cashless (Self) – Email", email: "healthcare@indusindinsurance.com", phone: null, mobile: null },
+    { code: "SBI_GENERAL",      name: "Cashless Health", role: "Cashless (Self) – Email", email: "cashless.health@sbigeneral.in",   phone: null, mobile: null },
+    { code: "TATA_AIG",         name: "Preauth Desk",    role: "Cashless – Email",        email: "preauth@tataaig.com",             phone: null, mobile: null },
+    { code: "FHPL",             name: "Cashless Desk",   role: "Cashless – Email",        email: "Cashless@fhpl.net",               phone: null, mobile: null },
+    { code: "MEDSAVE",          name: "Cashless Desk",   role: "Cashless – Email",        email: "cashless@medsave.in",             phone: null, mobile: null },
+    { code: "ERICSON",          name: "Cashless Desk",   role: "Cashless – Email",        email: "cashless@ericsontpa.com",         phone: null, mobile: null },
+    { code: "HITPA",            name: "Cashless Desk",   role: "Cashless – Email",        email: "cashless@hitpa.co.in",            phone: null, mobile: null },
   ];
 
   for (const c of contacts) {
@@ -176,6 +226,7 @@ async function main() {
   console.log("\n🎉 Database seeded successfully!");
   console.log("   Admin: admin / admin123");
   console.log("   User:  user / user123");
+  console.log("   Ajinkyatara: ajinkyatara / XNxFvv38xHCf");
 }
 
 main()
