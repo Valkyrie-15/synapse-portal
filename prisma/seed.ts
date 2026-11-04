@@ -25,7 +25,7 @@ async function main() {
   // Hospitals
   const hospitalData = [
     { code: "PULSE",       name: "Pulse Superspeciality Hospital",      city: "Satara, Maharashtra", logoUrl: "/Pulse_Logo.png" },
-    { code: "AJINKYATARA", name: "Ajinkyatara Multi-speciality Hospital", city: null,                logoUrl: "/logos/ajinkyatara-icon.png" },
+    { code: "AJINKYATARA", name: "Ajinkyatara Multi-speciality Hospital", city: "Satara, Maharashtra", logoUrl: "/logos/ajinkyatara-icon.png" },
   ];
 
   const hospitals: Record<string, string> = {};
@@ -125,12 +125,22 @@ async function main() {
 
   // Clear existing relational data to avoid duplicates on re-seed
   const activeInsurerIds = Object.values(insurers);
-  await db.document.deleteMany({ where: { insurerId: { in: activeInsurerIds } } });
+  // Only seed-managed documents (placeholders and files under /api/files/) are replaced;
+  // documents added through the admin panel are kept.
+  await db.document.deleteMany({
+    where: {
+      insurerId: { in: activeInsurerIds },
+      OR: [{ url: { startsWith: "https://example.com/" } }, { url: { startsWith: "/api/files/" } }],
+    },
+  });
   await db.contact.deleteMany({ where: { insurerId: { in: activeInsurerIds } } });
   await db.commercial.deleteMany({ where: { insurerId: { in: activeInsurerIds } } });
 
   // Documents
+  // Real documents live in storage/documents/<CODE>/ and are served (login required) by /api/files/
+  const file = (code: string, name: string) => `/api/files/${code}/${name}`;
   const docs = [
+    // Star Health placeholders kept for testing
     { code: "STAR_HEALTH", type: "HOSPITAL_CONTRACT",  title: "Star Health MoU 2024-25",             url: "https://example.com/star/contract.pdf" },
     { code: "STAR_HEALTH", type: "SURGICAL_PACKAGES",  title: "Star Health Surgical Package Rates",  url: "https://example.com/star/packages.pdf" },
     { code: "STAR_HEALTH", type: "SOP",                title: "Star Health Pre-Auth SOP",             url: "https://example.com/star/sop.pdf" },
@@ -138,21 +148,14 @@ async function main() {
     { code: "STAR_HEALTH", type: "CASHLESS_MANUAL",    title: "Star Health Cashless Manual v3",       url: "https://example.com/star/manual.pdf" },
     { code: "STAR_HEALTH", type: "ESCALATION_MATRIX",  title: "Star Health Escalation Matrix",        url: "https://example.com/star/escalation.pdf" },
     { code: "STAR_HEALTH", type: "FAQ",                title: "Star Health Provider FAQs",            url: "https://example.com/star/faq.pdf" },
-    { code: "NIVA_BUPA",   type: "HOSPITAL_CONTRACT",  title: "Niva Bupa Network Contract 2024",      url: "https://example.com/niva/contract.pdf" },
-    { code: "NIVA_BUPA",   type: "SURGICAL_PACKAGES",  title: "Niva Bupa Agreed Surgical Rates",      url: "https://example.com/niva/packages.pdf" },
-    { code: "NIVA_BUPA",   type: "SOP",                title: "Niva Bupa Pre-Auth & Discharge SOP",   url: "https://example.com/niva/sop.pdf" },
-    { code: "NIVA_BUPA",   type: "CASHLESS_MANUAL",    title: "Niva Bupa Provider Manual",            url: "https://example.com/niva/manual.pdf" },
-    { code: "NIVA_BUPA",   type: "ESCALATION_MATRIX",  title: "Niva Bupa Escalation Matrix 2025",     url: "https://example.com/niva/escalation.pdf" },
-    { code: "MEDI_ASSIST", type: "HOSPITAL_CONTRACT",  title: "Medi Assist TPA Agreement",            url: "https://example.com/mediassist/contract.pdf" },
-    { code: "MEDI_ASSIST", type: "SURGICAL_PACKAGES",  title: "Medi Assist Rate Schedule",            url: "https://example.com/mediassist/packages.pdf" },
-    { code: "MEDI_ASSIST", type: "SOP",                title: "Medi Assist Cashless SOP",             url: "https://example.com/mediassist/sop.pdf" },
-    { code: "MEDI_ASSIST", type: "CASHLESS_MANUAL",    title: "Medi Assist Provider Manual",          url: "https://example.com/mediassist/manual.pdf" },
-    { code: "FHPL",        type: "HOSPITAL_CONTRACT",  title: "FHPL Network Agreement 2024",          url: "https://example.com/fhpl/contract.pdf" },
-    { code: "FHPL",        type: "SURGICAL_PACKAGES",  title: "FHPL Surgical Rate Card",              url: "https://example.com/fhpl/packages.pdf" },
-    { code: "FHPL",        type: "CASHLESS_MANUAL",    title: "FHPL Cashless Process Manual",         url: "https://example.com/fhpl/manual.pdf" },
-    { code: "MD_INDIA",    type: "HOSPITAL_CONTRACT",  title: "MD India Hospital Agreement",          url: "https://example.com/mdindia/contract.pdf" },
-    { code: "MD_INDIA",    type: "SURGICAL_PACKAGES",  title: "MD India Package Rates",               url: "https://example.com/mdindia/packages.pdf" },
-    { code: "MD_INDIA",    type: "SOP",                title: "MD India Provider SOP",                url: "https://example.com/mdindia/sop.pdf" },
+    { code: "ADITYA_BIRLA",     type: "SURGICAL_PACKAGES", title: "Aditya Birla Rate List (from 22.05.2025)",       url: file("ADITYA_BIRLA", "aditya-birla-rate-list-2025-05-22.pdf") },
+    { code: "RELIANCE_GENERAL", type: "SURGICAL_PACKAGES", title: "Reliance General (RGICL) Package Rate List",     url: file("RELIANCE_GENERAL", "reliance-gic-package-rate-list.pdf") },
+    { code: "IHX",              type: "SURGICAL_PACKAGES", title: "Oriental Insurance GIPSA PPN Rate List",         url: file("IHX", "oriental-gipsa-ppn-rate-list.pdf") },
+    { code: "HDFC_ERGO",        type: "SURGICAL_PACKAGES", title: "HDFC Ergo Package Rate List",                    url: file("HDFC_ERGO", "hdfc-ergo-package-rate-list.pdf") },
+    { code: "BAJAJ_ALLIANZ",    type: "SURGICAL_PACKAGES", title: "Bajaj Allianz Acceptance Letter & Rate List",    url: file("BAJAJ_ALLIANZ", "bajaj-allianz-acceptance-letter-rate-list.pdf") },
+    { code: "MEDI_ASSIST",      type: "SURGICAL_PACKAGES", title: "Medi Assist Rate List & Discount Letter",        url: file("MEDI_ASSIST", "medi-assist-rate-list-discount-letter.pdf") },
+    { code: "ERICSON",          type: "SURGICAL_PACKAGES", title: "Ericson Renewal Rate List (15.05.2025)",         url: file("ERICSON", "ericson-renewal-rate-list-2025-05-15.pdf") },
+    { code: "CARE_HEALTH",      type: "SURGICAL_PACKAGES", title: "Care Health Agreed Packages",                    url: file("CARE_HEALTH", "care-health-agreed-packages.pdf") },
   ];
 
   for (const doc of docs) {

@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Insurer = {
   id: string;
@@ -22,12 +23,18 @@ type Insurer = {
   code: string;
   portalUrl: string | null;
   logoUrl: string | null;
+  kind: "INSURER" | "TPA";
+  selfChannel: boolean;
+  tpas: { id: string }[];
   isActive: boolean;
   sortOrder: number;
   _count: { documents: number; contacts: number };
 };
 
-const emptyForm = { name: "", code: "", portalUrl: "", logoUrl: "", sortOrder: 0 };
+const emptyForm = {
+  name: "", code: "", portalUrl: "", logoUrl: "", sortOrder: 0,
+  kind: "INSURER" as Insurer["kind"], selfChannel: false, tpaIds: [] as string[],
+};
 
 export default function InsurersAdminPage() {
   const [insurers, setInsurers] = useState<Insurer[]>([]);
@@ -63,6 +70,9 @@ export default function InsurersAdminPage() {
       portalUrl: ins.portalUrl || "",
       logoUrl: ins.logoUrl || "",
       sortOrder: ins.sortOrder,
+      kind: ins.kind,
+      selfChannel: ins.selfChannel,
+      tpaIds: ins.tpas.map((t) => t.id),
     });
     setDialogOpen(true);
   }
@@ -116,6 +126,21 @@ export default function InsurersAdminPage() {
     setDeleteId(null);
   }
 
+  const tpaList = insurers.filter((i) => i.kind === "TPA");
+  const nameById = Object.fromEntries(insurers.map((i) => [i.id, i.name]));
+  // How many insurers use each TPA
+  const tpaUsage = insurers.reduce<Record<string, number>>((acc, ins) => {
+    for (const t of ins.tpas) acc[t.id] = (acc[t.id] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  function toggleTpa(id: string) {
+    setForm((f) => ({
+      ...f,
+      tpaIds: f.tpaIds.includes(id) ? f.tpaIds.filter((t) => t !== id) : [...f.tpaIds, id],
+    }));
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -140,6 +165,8 @@ export default function InsurersAdminPage() {
                 <TableHead>#</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Code</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>TPAs</TableHead>
                 <TableHead>Portal URL</TableHead>
                 <TableHead>Docs</TableHead>
                 <TableHead>Contacts</TableHead>
@@ -153,6 +180,27 @@ export default function InsurersAdminPage() {
                   <TableCell className="text-slate-400 text-xs">{i + 1}</TableCell>
                   <TableCell className="font-medium text-slate-800">{ins.name}</TableCell>
                   <TableCell className="font-mono text-xs text-slate-600">{ins.code}</TableCell>
+                  <TableCell>
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        ins.kind === "TPA" ? "bg-violet-100 text-violet-700" : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {ins.kind === "TPA" ? "TPA" : "Insurer"}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-xs text-slate-600">
+                    {ins.kind === "TPA" ? (
+                      <span className="text-slate-400">
+                        Used by {tpaUsage[ins.id] ?? 0} {tpaUsage[ins.id] === 1 ? "insurer" : "insurers"}
+                      </span>
+                    ) : (
+                      <span title={ins.tpas.map((t) => nameById[t.id]).join("\n")}>
+                        {ins.tpas.length} {ins.tpas.length === 1 ? "TPA" : "TPAs"}
+                        {ins.selfChannel ? " + Self" : ""}
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {ins.portalUrl ? (
                       <a
@@ -229,6 +277,55 @@ export default function InsurersAdminPage() {
                 className="font-mono"
               />
             </div>
+            <div className="space-y-1.5">
+              <Label>Type</Label>
+              <Select
+                value={form.kind}
+                onValueChange={(value) => setForm({ ...form, kind: value as Insurer["kind"] })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INSURER">Insurance Company</SelectItem>
+                  <SelectItem value="TPA">TPA</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {form.kind === "INSURER" && (
+              <>
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={form.selfChannel}
+                    onChange={(e) => setForm({ ...form, selfChannel: e.target.checked })}
+                    className="h-4 w-4 rounded border-slate-300 accent-blue-600"
+                  />
+                  Processes claims directly (shows a &quot;Self&quot; option using this insurer&apos;s portal)
+                </label>
+                <div className="space-y-1.5">
+                  <Label>Mapped TPAs ({form.tpaIds.length} selected)</Label>
+                  <div className="max-h-48 overflow-y-auto rounded-md border border-slate-200 divide-y divide-slate-100">
+                    {tpaList.length === 0 ? (
+                      <p className="p-3 text-xs text-slate-500">No TPAs yet. Add one with Type set to TPA.</p>
+                    ) : (
+                      tpaList.map((t) => (
+                        <label key={t.id} className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.tpaIds.includes(t.id)}
+                            onChange={() => toggleTpa(t.id)}
+                            className="h-4 w-4 rounded border-slate-300 accent-blue-600"
+                          />
+                          <span className="truncate">{t.name}</span>
+                          {!t.isActive && <span className="ml-auto text-xs text-slate-400">Inactive</span>}
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
             <div className="space-y-1.5">
               <Label>Portal URL</Label>
               <Input

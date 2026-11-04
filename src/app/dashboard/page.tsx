@@ -327,7 +327,7 @@ function Dashboard() {
                   <ResourceCards
                     portalUrl={tpaDetail.portalUrl}
                     driveUrl={tpaDetail.driveUrl}
-                    documents={tpaDetail.documents}
+                    documents={isSelf ? tpaDetail.documents : [...tpaDetail.documents, ...insurer.documents]}
                     contacts={tpaDetail.contacts}
                     loading={false}
                     insurerName={tpaDetail.name}
