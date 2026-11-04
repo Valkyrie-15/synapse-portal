@@ -9,7 +9,7 @@ export async function GET() {
   }
 
   const insurers = await db.insurer.findMany({
-    where: { isActive: true },
+    where: { isActive: true, kind: "INSURER" },
     orderBy: { sortOrder: "asc" },
     select: { id: true, name: true, code: true, logoUrl: true },
   });

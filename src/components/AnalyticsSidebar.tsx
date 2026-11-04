@@ -45,6 +45,7 @@ interface AnalyticsSidebarProps {
   stats: ClaimsStats | null;
   commercials: Commercial[];
   insurerName: string;
+  loading?: boolean;
 }
 
 const COLORS = ["#f59e0b", "#10b981", "#3b82f6", "#ef4444"];
@@ -59,11 +60,11 @@ const monthlyTrend = [
   { month: "Jul", claims: 198 },
 ];
 
-export default function AnalyticsSidebar({ stats, commercials, insurerName }: AnalyticsSidebarProps) {
+export default function AnalyticsSidebar({ stats, commercials, insurerName, loading = false }: AnalyticsSidebarProps) {
   if (!stats) {
     return (
       <div className="flex items-center justify-center py-20 text-slate-400 text-sm">
-        Loading analytics...
+        {loading ? "Loading analytics..." : "No claims statistics available yet"}
       </div>
     );
   }

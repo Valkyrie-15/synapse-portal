@@ -17,7 +17,24 @@ export async function GET(request: NextRequest) {
 
   const insurer = await db.insurer.findUnique({
     where: { id: insurerId },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      logoUrl: true,
+      portalUrl: true,
+      driveUrl: true,
+      kind: true,
+      selfChannel: true,
+      tpas: {
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+        select: { id: true, name: true, code: true },
+      },
+      isActive: true,
+      sortOrder: true,
+      createdAt: true,
+      updatedAt: true,
       documents: { where: { isActive: true } },
       contacts: true,
       commercials: true,

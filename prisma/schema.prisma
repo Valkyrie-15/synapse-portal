@@ -40,6 +40,10 @@ model Insurer {
   portalUsername String?
   portalPassword String?
   driveUrl       String?
+  kind        String       @default("INSURER") // INSURER | TPA
+  selfChannel Boolean      @default(false)     // insurer processes claims itself (shown as "Self" TPA option)
+  tpas        Insurer[]    @relation("InsurerTpas")
+  insurers    Insurer[]    @relation("InsurerTpas")
   isActive    Boolean      @default(true)
   sortOrder   Int          @default(0)
   createdAt   DateTime     @default(now())

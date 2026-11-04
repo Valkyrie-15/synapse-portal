@@ -3,7 +3,11 @@ import bcrypt from "bcryptjs";
 
 const db = new PrismaClient();
 
-const REMOVED_CODES = ["VIDAL_HEALTH", "RAKSHA_TPA", "NIVA_BUPA", "NVGT_CARE", "HERITAGE_HEALTH", "ICICI_LOMBARD"];
+const REMOVED_CODES = [
+  "VIDAL_HEALTH", "RAKSHA_TPA", "NIVA_BUPA", "NVGT_CARE", "HERITAGE_HEALTH", "ICICI_LOMBARD",
+  // Folded into the insurer's "Self" channel
+  "BAJAJ_ALLIANZ_SELF", "CARE_HEALTH_SELF",
+];
 
 const IHX_URL  = "https://provider.ihx.in/";
 const IHX_USER = "insuajinkyatara@gmail.com";
@@ -54,55 +58,70 @@ async function main() {
 
   console.log(`✅ Users: ${userData.map((u) => u.username).join(", ")}`);
 
-  // Insurers
+  // Insurers & TPAs
   // Source: "Insurance Tie Up Information.xlsx" (tie-ups marked Y). Star Health kept for testing.
-  // portalUrl null => insurer communicates via email (see contacts below).
+  // An insurer's own portal fields describe its "Self" channel (selfChannel: true); claims via a
+  // TPA use the TPA's portal. portalUrl null => communicates via email (see contacts below).
   const ihx = { portalUrl: IHX_URL, portalUsername: IHX_USER, portalPassword: IHX_PASS };
-  const insurerData: { name: string; code: string; portalUrl: string | null; portalUsername?: string | null; portalPassword?: string | null; sortOrder: number; isActive?: boolean }[] = [
-    { name: "Vitraya Health",                                     code: "VITRAYA",            portalUrl: "https://vhi.vitraya.com/preAuth/claims", sortOrder: 0, isActive: false },
-    { name: "Star Health Insurance",                              code: "STAR_HEALTH",        portalUrl: "https://vhi.vitraya.com/?returnUrl=%2FpreAuth%2Fclaims", sortOrder: 1 },
+  const PSU_TPAS = ["MEDI_ASSIST", "HEALTH_INDIA", "MD_INDIA", "ERICSON", "HITPA", "PARAMOUNT"];
+  type Row = { name: string; code: string; kind: "INSURER" | "TPA"; portalUrl: string | null; portalUsername?: string | null; portalPassword?: string | null; selfChannel?: boolean; tpas?: string[]; sortOrder: number; isActive?: boolean };
+  const insurerData: Row[] = [
+    { kind: "INSURER", name: "Vitraya Health",                                     code: "VITRAYA",            portalUrl: "https://vhi.vitraya.com/preAuth/claims", sortOrder: 0, isActive: false },
+    { kind: "INSURER", name: "Star Health Insurance",                              code: "STAR_HEALTH",        portalUrl: "https://vhi.vitraya.com/?returnUrl=%2FpreAuth%2Fclaims", selfChannel: true, sortOrder: 1 },
     // Insurance companies
-    { name: "National Insurance Company Ltd",                     code: "NATIONAL_INSURANCE", ...ihx, sortOrder: 2 },
-    { name: "The New India Assurance Co. Ltd",                    code: "NEW_INDIA",          ...ihx, sortOrder: 3 },
-    { name: "The Oriental Insurance Co. Ltd",                     code: "IHX",                ...ihx, sortOrder: 4 },
-    { name: "United India Insurance Co. Ltd",                     code: "UNITED_INDIA",       ...ihx, sortOrder: 5 },
-    { name: "ACKO General Insurance Limited",                     code: "ACKO",               ...ihx, sortOrder: 6 },
-    { name: "Aditya Birla Health Insurance Company Limited",      code: "ADITYA_BIRLA",       ...ihx, sortOrder: 7 },
-    { name: "Bajaj Allianz General Insurance Company Limited",    code: "BAJAJ_ALLIANZ",      ...ihx, sortOrder: 8 },
-    { name: "Bajaj Allianz (Hospital Portal)",                    code: "BAJAJ_ALLIANZ_SELF", portalUrl: null, portalUsername: "ajinkya138236@hat.co.in", portalPassword: "ajinkya138236", sortOrder: 9 },
-    { name: "Care Health Insurance Company Limited",              code: "CARE_HEALTH",        ...ihx, sortOrder: 10 },
-    { name: "Care Health (Care Portal)",                          code: "CARE_HEALTH_SELF",   portalUrl: null, portalUsername: "23850951", portalPassword: "babar11520226", sortOrder: 11 },
-    { name: "Generali Central Insurance Company Limited",         code: "GENERALI_CENTRAL",   portalUrl: null, portalUsername: "h587746", portalPassword: "FGH@123", sortOrder: 12 },
-    { name: "Go Digit General Insurance Limited",                 code: "GO_DIGIT",           ...ihx, sortOrder: 13 },
-    { name: "HDFC Ergo General Insurance Company Limited",        code: "HDFC_ERGO",          ...ihx, sortOrder: 14 },
-    { name: "Liberty General Insurance Limited",                  code: "LIBERTY",            ...ihx, sortOrder: 15 },
-    { name: "Magma General Insurance Limited",                    code: "MAGMA",              ...ihx, sortOrder: 16 },
-    { name: "Reliance General Insurance Company Limited",         code: "RELIANCE_GENERAL",   ...ihx, sortOrder: 17 },
-    { name: "SBI General Insurance Company Limited",              code: "SBI_GENERAL",        ...ihx, sortOrder: 18 },
-    { name: "Tata AIG General Insurance Company Limited",         code: "TATA_AIG",           portalUrl: null, sortOrder: 19 },
+    { kind: "INSURER", name: "National Insurance Company Ltd",                     code: "NATIONAL_INSURANCE", portalUrl: null, tpas: PSU_TPAS, sortOrder: 2 },
+    { kind: "INSURER", name: "The New India Assurance Co. Ltd",                    code: "NEW_INDIA",          portalUrl: null, tpas: PSU_TPAS, sortOrder: 3 },
+    { kind: "INSURER", name: "The Oriental Insurance Co. Ltd",                     code: "IHX",                portalUrl: null, tpas: PSU_TPAS, sortOrder: 4 },
+    { kind: "INSURER", name: "United India Insurance Co. Ltd",                     code: "UNITED_INDIA",       portalUrl: null, tpas: PSU_TPAS, sortOrder: 5 },
+    { kind: "INSURER", name: "ACKO General Insurance Limited",                     code: "ACKO",               portalUrl: null, tpas: ["MEDI_ASSIST"], sortOrder: 6 },
+    { kind: "INSURER", name: "Aditya Birla Health Insurance Company Limited",      code: "ADITYA_BIRLA",       ...ihx, selfChannel: true, tpas: ["MEDI_ASSIST"], sortOrder: 7 },
+    { kind: "INSURER", name: "Bajaj Allianz General Insurance Company Limited",    code: "BAJAJ_ALLIANZ",      portalUrl: null, portalUsername: "ajinkya138236@hat.co.in", portalPassword: "ajinkya138236", selfChannel: true, tpas: ["MEDI_ASSIST"], sortOrder: 8 },
+    { kind: "INSURER", name: "Care Health Insurance Company Limited",              code: "CARE_HEALTH",        portalUrl: null, portalUsername: "23850951", portalPassword: "babar11520226", selfChannel: true, tpas: ["MEDI_ASSIST"], sortOrder: 9 },
+    { kind: "INSURER", name: "Generali Central Insurance Company Limited",         code: "GENERALI_CENTRAL",   portalUrl: null, portalUsername: "h587746", portalPassword: "FGH@123", selfChannel: true, sortOrder: 10 },
+    { kind: "INSURER", name: "Go Digit General Insurance Limited",                 code: "GO_DIGIT",           portalUrl: null, tpas: ["MEDI_ASSIST"], sortOrder: 11 },
+    { kind: "INSURER", name: "HDFC Ergo General Insurance Company Limited",        code: "HDFC_ERGO",          ...ihx, selfChannel: true, sortOrder: 12 },
+    { kind: "INSURER", name: "Liberty General Insurance Limited",                  code: "LIBERTY",            portalUrl: null, tpas: ["MEDI_ASSIST"], sortOrder: 13 },
+    { kind: "INSURER", name: "Magma General Insurance Limited",                    code: "MAGMA",              portalUrl: null, tpas: ["MEDI_ASSIST"], sortOrder: 14 },
+    { kind: "INSURER", name: "Reliance General Insurance Company Limited",         code: "RELIANCE_GENERAL",   portalUrl: null, selfChannel: true, tpas: ["MEDI_ASSIST"], sortOrder: 15 },
+    { kind: "INSURER", name: "SBI General Insurance Company Limited",              code: "SBI_GENERAL",        portalUrl: null, selfChannel: true, tpas: ["MEDI_ASSIST"], sortOrder: 16 },
+    { kind: "INSURER", name: "Tata AIG General Insurance Company Limited",         code: "TATA_AIG",           portalUrl: null, selfChannel: true, sortOrder: 17 },
     // TPAs
-    { name: "Medi Assist Insurance TPA Private Limited",          code: "MEDI_ASSIST",        ...ihx, sortOrder: 20 },
-    { name: "MD India Health Insurance TPA Private Limited",      code: "MD_INDIA",           ...ihx, sortOrder: 21 },
-    { name: "Family Health Plan Insurance TPA Private Limited",   code: "FHPL",               portalUrl: "https://epreauth.fhpl.net/SearchPreauths.aspx", sortOrder: 22 },
-    { name: "Paramount Health Services & Insurance TPA Private Limited", code: "PARAMOUNT",   ...ihx, sortOrder: 23 },
-    { name: "East West Assist Insurance TPA Private Limited",     code: "VOLO_HEALTH",        portalUrl: "https://provider.volohealthtpa.com/home", portalUsername: "PRV7811_2", portalPassword: "Volo@10092026", sortOrder: 24 },
-    { name: "Medsave Health Insurance TPA Limited",               code: "MEDSAVE",            portalUrl: null, sortOrder: 25 },
-    { name: "Health India Insurance TPA Services Private Limited", code: "HEALTH_INDIA",      portalUrl: "https://www.healthindiatpa.com/Logins/LoginProvider.aspx", portalUsername: "74936", portalPassword: "74936", sortOrder: 26 },
-    { name: "Ericson Insurance TPA Private Limited",              code: "ERICSON",            portalUrl: null, sortOrder: 27 },
-    { name: "Health Insurance TPA of India Limited",              code: "HITPA",              portalUrl: null, sortOrder: 28 },
+    { kind: "TPA", name: "Medi Assist Insurance TPA Private Limited",              code: "MEDI_ASSIST",        ...ihx, sortOrder: 20 },
+    { kind: "TPA", name: "MD India Health Insurance TPA Private Limited",          code: "MD_INDIA",           ...ihx, sortOrder: 21 },
+    { kind: "TPA", name: "Family Health Plan Insurance TPA Private Limited",       code: "FHPL",               portalUrl: "https://epreauth.fhpl.net/SearchPreauths.aspx", sortOrder: 22 },
+    { kind: "TPA", name: "Paramount Health Services & Insurance TPA Private Limited", code: "PARAMOUNT",       ...ihx, sortOrder: 23 },
+    { kind: "TPA", name: "East West Assist Insurance TPA Private Limited",         code: "VOLO_HEALTH",        portalUrl: "https://provider.volohealthtpa.com/home", portalUsername: "PRV7811_2", portalPassword: "Volo@10092026", sortOrder: 24 },
+    { kind: "TPA", name: "Medsave Health Insurance TPA Limited",                   code: "MEDSAVE",            portalUrl: null, sortOrder: 25 },
+    { kind: "TPA", name: "Health India Insurance TPA Services Private Limited",    code: "HEALTH_INDIA",       portalUrl: "https://www.healthindiatpa.com/Logins/LoginProvider.aspx", portalUsername: "74936", portalPassword: "74936", sortOrder: 26 },
+    { kind: "TPA", name: "Ericson Insurance TPA Private Limited",                  code: "ERICSON",            portalUrl: null, sortOrder: 27 },
+    { kind: "TPA", name: "Health Insurance TPA of India Limited",                  code: "HITPA",              portalUrl: null, sortOrder: 28 },
   ];
 
   const insurers: Record<string, string> = {};
 
   for (const ins of insurerData) {
+    const fields = {
+      name: ins.name, kind: ins.kind, portalUrl: ins.portalUrl,
+      portalUsername: ins.portalUsername ?? null, portalPassword: ins.portalPassword ?? null,
+      selfChannel: ins.selfChannel ?? false, isActive: ins.isActive ?? true, sortOrder: ins.sortOrder,
+    };
     const record = await db.insurer.upsert({
       where:  { code: ins.code },
-      update: { name: ins.name, portalUrl: ins.portalUrl, portalUsername: ins.portalUsername ?? null, portalPassword: ins.portalPassword ?? null, isActive: ins.isActive ?? true, sortOrder: ins.sortOrder },
-      create: { ...ins, isActive: ins.isActive ?? true },
+      update: fields,
+      create: { code: ins.code, ...fields },
     });
     insurers[ins.code] = record.id;
-    console.log(`  ✅ Insurer: ${ins.name}`);
+    console.log(`  ✅ ${ins.kind === "TPA" ? "TPA" : "Insurer"}: ${ins.name}`);
   }
+
+  // Insurer → TPA mapping (second pass, so every TPA row exists)
+  for (const ins of insurerData) {
+    await db.insurer.update({
+      where: { code: ins.code },
+      data:  { tpas: { set: (ins.tpas ?? []).map((code) => ({ code })) } },
+    });
+  }
+  console.log("✅ Insurer → TPA mapping set");
 
   // Clear existing relational data to avoid duplicates on re-seed
   const activeInsurerIds = Object.values(insurers);
