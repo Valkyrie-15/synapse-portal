@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -116,18 +116,6 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-
-            {/* Demo credentials hint */}
-            <div className="mt-6 p-3 rounded-lg bg-blue-50 border border-blue-100">
-              <div className="flex items-center gap-2 mb-1">
-                <ShieldCheck className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-semibold text-blue-700">Demo Credentials</span>
-              </div>
-              <div className="text-xs text-blue-600 space-y-0.5 font-mono">
-                <div>Admin: <strong>admin</strong> / <strong>admin123</strong></div>
-                <div>User: <strong>user</strong> / <strong>user123</strong></div>
-              </div>
-            </div>
           </CardContent>
         </Card>
 

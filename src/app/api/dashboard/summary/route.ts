@@ -1,12 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getAuthContext, resolveHospitalId } from "@/lib/auth";
 
-export async function GET() {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(request: NextRequest) {
+  const ctx = await getAuthContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const hospitalId = resolveHospitalId(ctx, request.nextUrl.searchParams.get("hospitalId"));
+  if (!hospitalId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const agg = await db.claimsStats.aggregate({
+    where: { insurer: { hospitalId, isActive: true } },
     _sum: {
       pending: true,
       approved: true,

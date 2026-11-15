@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getAuthContext, isSuperAdmin } from "@/lib/auth";
 import Link from "next/link";
 import {
   Building2,
@@ -11,8 +11,9 @@ import {
 } from "lucide-react";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
-  if (!session || session.role !== "ADMIN") {
+  // Super admins only; the role is read from the database, not the token
+  const ctx = await getAuthContext();
+  if (!ctx || !isSuperAdmin(ctx.role)) {
     redirect("/dashboard");
   }
 

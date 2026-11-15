@@ -23,6 +23,8 @@ type Insurer = {
   code: string;
   portalUrl: string | null;
   logoUrl: string | null;
+  hospitalId: string;
+  hospital: { id: string; name: string; code: string };
   kind: "INSURER" | "TPA";
   selfChannel: boolean;
   tpas: { id: string }[];
@@ -31,8 +33,10 @@ type Insurer = {
   _count: { documents: number; contacts: number };
 };
 
+type Hospital = { id: string; name: string };
+
 const emptyForm = {
-  name: "", code: "", portalUrl: "", logoUrl: "", sortOrder: 0,
+  hospitalId: "", name: "", code: "", portalUrl: "", logoUrl: "", sortOrder: 0,
   kind: "INSURER" as Insurer["kind"], selfChannel: false, tpaIds: [] as string[],
 };
 
@@ -44,6 +48,8 @@ export default function InsurersAdminPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [filterHospitalId, setFilterHospitalId] = useState("all");
 
   async function fetchInsurers() {
     const res = await fetch("/api/admin/insurers");
@@ -56,15 +62,20 @@ export default function InsurersAdminPage() {
 
   useEffect(() => { fetchInsurers(); }, []);
 
+  useEffect(() => {
+    fetch("/api/auth/me").then((r) => r.json()).then((d) => setHospitals(d.hospitals || []));
+  }, []);
+
   function openCreate() {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, hospitalId: filterHospitalId !== "all" ? filterHospitalId : "" });
     setDialogOpen(true);
   }
 
   function openEdit(ins: Insurer) {
     setEditing(ins);
     setForm({
+      hospitalId: ins.hospitalId,
       name: ins.name,
       code: ins.code,
       portalUrl: ins.portalUrl || "",
@@ -126,7 +137,9 @@ export default function InsurersAdminPage() {
     setDeleteId(null);
   }
 
-  const tpaList = insurers.filter((i) => i.kind === "TPA");
+  // TPAs can only be mapped within the insurer's own hospital
+  const tpaList = insurers.filter((i) => i.kind === "TPA" && i.hospitalId === form.hospitalId);
+  const visibleInsurers = filterHospitalId === "all" ? insurers : insurers.filter((i) => i.hospitalId === filterHospitalId);
   const nameById = Object.fromEntries(insurers.map((i) => [i.id, i.name]));
   // How many insurers use each TPA
   const tpaUsage = insurers.reduce<Record<string, number>>((acc, ins) => {
@@ -148,9 +161,22 @@ export default function InsurersAdminPage() {
           <h1 className="text-2xl font-bold text-slate-800">Insurers</h1>
           <p className="text-slate-500 text-sm mt-1">Manage insurance companies and TPAs</p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="w-4 h-4" /> Add Insurer
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select value={filterHospitalId} onValueChange={setFilterHospitalId}>
+            <SelectTrigger className="w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All hospitals</SelectItem>
+              {hospitals.map((h) => (
+                <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={openCreate}>
+            <Plus className="w-4 h-4" /> Add Insurer
+          </Button>
+        </div>
       </div>
 
       <Card className="border">
@@ -163,6 +189,7 @@ export default function InsurersAdminPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>#</TableHead>
+                <TableHead>Hospital</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Code</TableHead>
                 <TableHead>Type</TableHead>
@@ -175,9 +202,10 @@ export default function InsurersAdminPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {insurers.map((ins, i) => (
+              {visibleInsurers.map((ins, i) => (
                 <TableRow key={ins.id}>
                   <TableCell className="text-slate-400 text-xs">{i + 1}</TableCell>
+                  <TableCell className="text-xs text-slate-600">{ins.hospital.name}</TableCell>
                   <TableCell className="font-medium text-slate-800">{ins.name}</TableCell>
                   <TableCell className="font-mono text-xs text-slate-600">{ins.code}</TableCell>
                   <TableCell>
@@ -260,6 +288,23 @@ export default function InsurersAdminPage() {
             <DialogTitle>{editing ? "Edit Insurer" : "Add Insurer"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Hospital *</Label>
+              <Select
+                value={form.hospitalId}
+                onValueChange={(value) => setForm({ ...form, hospitalId: value, tpaIds: [] })}
+                disabled={!!editing}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a hospital..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {hospitals.map((h) => (
+                    <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1.5">
               <Label>Name *</Label>
               <Input
@@ -347,7 +392,7 @@ export default function InsurersAdminPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || !form.name || !form.code}>
+            <Button onClick={handleSave} disabled={saving || !form.hospitalId || !form.name || !form.code}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {editing ? "Update" : "Create"}
             </Button>

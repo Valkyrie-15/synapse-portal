@@ -23,10 +23,10 @@ type Contact = {
   phone?: string | null;
   mobile?: string | null;
   insurerId: string;
-  insurer: { name: string };
+  insurer: { name: string; hospital: { name: string } };
 };
 
-type Insurer = { id: string; name: string };
+type Insurer = { id: string; name: string; hospital: { name: string } };
 
 const emptyForm = { insurerId: "", name: "", role: "", email: "", phone: "", mobile: "" };
 
@@ -133,7 +133,7 @@ export default function ContactsAdminPage() {
           <SelectContent>
             <SelectItem value="all">All insurers</SelectItem>
             {insurers.map((ins) => (
-              <SelectItem key={ins.id} value={ins.id}>{ins.name}</SelectItem>
+              <SelectItem key={ins.id} value={ins.id}>{ins.name} — {ins.hospital.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -160,7 +160,7 @@ export default function ContactsAdminPage() {
             <TableBody>
               {contacts.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium text-sm text-slate-700">{c.insurer.name}</TableCell>
+                  <TableCell className="font-medium text-sm text-slate-700">{c.insurer.name}<div className="text-xs font-normal text-slate-400">{c.insurer.hospital.name}</div></TableCell>
                   <TableCell className="text-slate-800 font-medium text-sm">{c.name}</TableCell>
                   <TableCell className="text-slate-600 text-sm">{c.role}</TableCell>
                   <TableCell className="text-xs text-blue-600">{c.email || "—"}</TableCell>
@@ -200,7 +200,7 @@ export default function ContactsAdminPage() {
                 <SelectTrigger><SelectValue placeholder="Select insurer" /></SelectTrigger>
                 <SelectContent>
                   {insurers.map((ins) => (
-                    <SelectItem key={ins.id} value={ins.id}>{ins.name}</SelectItem>
+                    <SelectItem key={ins.id} value={ins.id}>{ins.name} — {ins.hospital.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

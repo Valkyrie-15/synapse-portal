@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getAuthContext, isSuperAdmin } from "@/lib/auth";
 
+// Admin APIs are for super admins only; the role is read from the database, not the token
 async function requireAdmin() {
-  const session = await getSession();
-  if (!session || session.role !== "ADMIN") return null;
-  return session;
+  const ctx = await getAuthContext();
+  return ctx && isSuperAdmin(ctx.role) ? ctx : null;
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

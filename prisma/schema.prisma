@@ -17,13 +17,14 @@ model Hospital {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   users     User[]
+  insurers  Insurer[]
 }
 
 model User {
   id         String    @id @default(cuid())
   username   String    @unique
   password   String
-  role       String    @default("USER")
+  role       String    @default("USER") // SUPER_ADMIN | USER
   name       String    @default("")
   hospitalId String?
   createdAt  DateTime  @default(now())
@@ -34,7 +35,9 @@ model User {
 model Insurer {
   id          String       @id @default(cuid())
   name        String
-  code        String       @unique
+  code        String       // unique per hospital
+  hospitalId  String
+  hospital    Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   logoUrl     String?
   portalUrl      String?
   portalUsername String?
@@ -52,6 +55,8 @@ model Insurer {
   contacts    Contact[]
   commercials Commercial[]
   claimsStats ClaimsStats?
+
+  @@unique([hospitalId, code])
 }
 
 model Document {

@@ -81,9 +81,12 @@ function Dashboard() {
   // Step 1: no insurer; step 2: insurer selected; step 3: insurer + TPA selected
   const insurerId = searchParams.get("insurer") ?? "";
   const tpaParam = searchParams.get("tpa") ?? "";
+  // Super admins can view any hospital via ?hospital=<id>; everyone else always sees their own
+  const hospitalParam = searchParams.get("hospital") ?? "";
 
   const [user, setUser] = useState<User | null>(null);
-  const [hospital, setHospital] = useState<Hospital | null>(null);
+  const [ownHospital, setOwnHospital] = useState<Hospital | null>(null);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [insurers, setInsurers] = useState<Insurer[]>([]);
   const [aggregateStats, setAggregateStats] = useState<ClaimsStats | null>(null);
   // `*For` records which id the current detail was fetched for, so stale or pending data is never shown
@@ -94,30 +97,34 @@ function Dashboard() {
 
   useEffect(() => {
     async function init() {
-      const [meRes, insurersRes, summaryRes] = await Promise.all([
-        fetch("/api/auth/me"),
-        fetch("/api/insurers"),
-        fetch("/api/dashboard/summary"),
-      ]);
+      const meRes = await fetch("/api/auth/me");
       if (!meRes.ok) {
         router.push("/login");
         return;
       }
       const meData = await meRes.json();
       setUser(meData.user);
-      setHospital(meData.hospital);
-
-      if (insurersRes.ok) {
-        const data = await insurersRes.json();
-        setInsurers(data.insurers || []);
-      }
-
-      if (summaryRes.ok) {
-        setAggregateStats(await summaryRes.json());
-      }
+      setOwnHospital(meData.hospital);
+      setHospitals(meData.hospitals || []);
     }
     init();
   }, [router]);
+
+  const hospital = hospitals.find((h) => h.id === hospitalParam) ?? ownHospital ?? hospitals[0] ?? null;
+  const hospitalId = hospital?.id ?? "";
+
+  // Insurer list and overview totals for the hospital being viewed
+  useEffect(() => {
+    if (!hospitalId) return;
+    let cancelled = false;
+    const qs = `?hospitalId=${encodeURIComponent(hospitalId)}`;
+    Promise.all([fetch(`/api/insurers${qs}`), fetch(`/api/dashboard/summary${qs}`)]).then(async ([insurersRes, summaryRes]) => {
+      if (cancelled) return;
+      setInsurers(insurersRes.ok ? (await insurersRes.json()).insurers || [] : []);
+      setAggregateStats(summaryRes.ok ? await summaryRes.json() : null);
+    });
+    return () => { cancelled = true; };
+  }, [hospitalId]);
 
   // Load the selected insurer (stats, company details, mapped TPAs)
   useEffect(() => {
@@ -158,8 +165,9 @@ function Dashboard() {
   const tpaDetail = isSelf ? insurer : tpaFor === tpaId ? tpa : null;
   const tpaLoading = !!tpaId && !isSelf && tpaFor !== tpaId;
 
-  function goTo(nextInsurerId?: string, nextTpaId?: string) {
+  function goTo(nextInsurerId?: string, nextTpaId?: string, nextHospitalId = hospitalParam) {
     const params = new URLSearchParams();
+    if (nextHospitalId) params.set("hospital", nextHospitalId);
     if (nextInsurerId) params.set("insurer", nextInsurerId);
     if (nextInsurerId && nextTpaId) params.set("tpa", nextTpaId);
     const qs = params.toString();
@@ -167,6 +175,17 @@ function Dashboard() {
   }
 
   if (!user) return <FullPageSpinner />;
+
+  if (!hospital) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar user={user} />
+        <div className="flex-1 flex items-center justify-center p-6">
+          <p className="text-sm text-slate-500">Your account is not linked to a hospital. Please contact your administrator.</p>
+        </div>
+      </div>
+    );
+  }
 
   const insurerName = (!insurerLoading && insurer?.name) || insurers.find((i) => i.id === insurerId)?.name || "";
 
@@ -179,7 +198,7 @@ function Dashboard() {
           <div className="max-w-7xl mx-auto p-6">
             {/* Hospital identity banner */}
             {hospital && (
-              <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 mb-4 shadow-sm flex items-center gap-4">
+              <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 mb-4 shadow-sm flex items-center gap-4 flex-wrap">
                 <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center flex-shrink-0 p-1">
                   {hospital.logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -192,6 +211,23 @@ function Dashboard() {
                   <h2 className="text-slate-800 font-bold text-base leading-tight">{hospital.name}</h2>
                   {hospital.city && <p className="text-slate-500 text-sm leading-tight">{hospital.city}</p>}
                 </div>
+                {hospitals.length > 1 && (
+                  <div className="ml-auto flex items-center gap-2">
+                    <span className="text-xs font-medium text-slate-500 whitespace-nowrap">Viewing hospital</span>
+                    <Select value={hospital.id} onValueChange={(value) => goTo(undefined, undefined, value)}>
+                      <SelectTrigger className="bg-white text-slate-800 font-medium border-slate-300 h-9 min-w-[220px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hospitals.map((h) => (
+                          <SelectItem key={h.id} value={h.id}>
+                            {h.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             )}
 

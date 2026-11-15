@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { db } from "@/lib/db";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-change-in-production"
@@ -38,3 +39,41 @@ export async function getSession(): Promise<JWTPayload | null> {
 }
 
 export { COOKIE_NAME };
+
+// ── Role-based access ─────────────────────────────────────────────────────────
+// SUPER_ADMIN: sees and manages every hospital. USER: sees only their own hospital.
+
+export const SUPER_ADMIN = "SUPER_ADMIN";
+
+export function isSuperAdmin(role: string | undefined): boolean {
+  return role === SUPER_ADMIN;
+}
+
+export interface AuthContext {
+  userId: string;
+  role: string;
+  hospitalId: string | null;
+}
+
+/** Current user, re-read from the database so role or hospital changes apply immediately. */
+export async function getAuthContext(): Promise<AuthContext | null> {
+  const session = await getSession();
+  if (!session) return null;
+  const user = await db.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, role: true, hospitalId: true },
+  });
+  if (!user) return null;
+  return { userId: user.id, role: user.role, hospitalId: user.hospitalId };
+}
+
+/**
+ * The hospital whose data this request may read. A super admin may pick any hospital
+ * (falling back to their own); everyone else is pinned to their own hospital, and asking
+ * for another one is refused. Returns null when access must be denied.
+ */
+export function resolveHospitalId(ctx: AuthContext, requested?: string | null): string | null {
+  if (isSuperAdmin(ctx.role)) return requested || ctx.hospitalId;
+  if (requested && requested !== ctx.hospitalId) return null;
+  return ctx.hospitalId;
+}

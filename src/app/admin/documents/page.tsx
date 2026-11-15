@@ -40,10 +40,10 @@ type Document = {
   url: string;
   isActive: boolean;
   insurerId: string;
-  insurer: { name: string };
+  insurer: { name: string; hospital: { name: string } };
 };
 
-type Insurer = { id: string; name: string };
+type Insurer = { id: string; name: string; hospital: { name: string } };
 
 const emptyForm = { insurerId: "", type: "", title: "", url: "" };
 
@@ -146,7 +146,7 @@ export default function DocumentsAdminPage() {
           <SelectContent>
             <SelectItem value="all">All insurers</SelectItem>
             {insurers.map((ins) => (
-              <SelectItem key={ins.id} value={ins.id}>{ins.name}</SelectItem>
+              <SelectItem key={ins.id} value={ins.id}>{ins.name} — {ins.hospital.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -171,7 +171,7 @@ export default function DocumentsAdminPage() {
             <TableBody>
               {documents.map((doc) => (
                 <TableRow key={doc.id}>
-                  <TableCell className="font-medium text-slate-700 text-sm">{doc.insurer.name}</TableCell>
+                  <TableCell className="font-medium text-slate-700 text-sm">{doc.insurer.name}<div className="text-xs font-normal text-slate-400">{doc.insurer.hospital.name}</div></TableCell>
                   <TableCell>
                     <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-medium">
                       {docLabel(doc.type)}
@@ -223,7 +223,7 @@ export default function DocumentsAdminPage() {
                 <SelectTrigger><SelectValue placeholder="Select insurer" /></SelectTrigger>
                 <SelectContent>
                   {insurers.map((ins) => (
-                    <SelectItem key={ins.id} value={ins.id}>{ins.name}</SelectItem>
+                    <SelectItem key={ins.id} value={ins.id}>{ins.name} — {ins.hospital.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -23,10 +23,10 @@ type Commercial = {
   packageRate?: number | null;
   notes?: string | null;
   insurerId: string;
-  insurer: { name: string };
+  insurer: { name: string; hospital: { name: string } };
 };
 
-type Insurer = { id: string; name: string };
+type Insurer = { id: string; name: string; hospital: { name: string } };
 
 const emptyForm = {
   insurerId: "", category: "", description: "",
@@ -140,7 +140,7 @@ export default function CommercialsAdminPage() {
           <SelectContent>
             <SelectItem value="all">All insurers</SelectItem>
             {insurers.map((ins) => (
-              <SelectItem key={ins.id} value={ins.id}>{ins.name}</SelectItem>
+              <SelectItem key={ins.id} value={ins.id}>{ins.name} — {ins.hospital.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -167,7 +167,7 @@ export default function CommercialsAdminPage() {
             <TableBody>
               {commercials.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium text-sm text-slate-700">{c.insurer.name}</TableCell>
+                  <TableCell className="font-medium text-sm text-slate-700">{c.insurer.name}<div className="text-xs font-normal text-slate-400">{c.insurer.hospital.name}</div></TableCell>
                   <TableCell className="text-sm font-medium text-slate-800">{c.category}</TableCell>
                   <TableCell className="text-sm text-slate-600 max-w-[200px] truncate">{c.description}</TableCell>
                   <TableCell>
@@ -215,7 +215,7 @@ export default function CommercialsAdminPage() {
                 <SelectTrigger><SelectValue placeholder="Select insurer" /></SelectTrigger>
                 <SelectContent>
                   {insurers.map((ins) => (
-                    <SelectItem key={ins.id} value={ins.id}>{ins.name}</SelectItem>
+                    <SelectItem key={ins.id} value={ins.id}>{ins.name} — {ins.hospital.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

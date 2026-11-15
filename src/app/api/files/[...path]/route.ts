@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
-import { getSession } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { getAuthContext, isSuperAdmin } from "@/lib/auth";
 
-// Private documents live outside /public so they are only served to signed-in users
+// Private documents live outside /public, under storage/documents/<HOSPITAL_CODE>/<INSURER_CODE>/,
+// and are only served to signed-in users of that hospital (or a super admin)
 const STORAGE_DIR = path.join(process.cwd(), "storage", "documents");
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -18,13 +20,29 @@ const CONTENT_TYPES: Record<string, string> = {
 };
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ctx = await getAuthContext();
+  if (!ctx) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { path: segments } = await params;
+  // No relative or embedded path parts, so a request can't climb into another hospital's folder
+  if (segments.some((seg) => seg === "." || seg === ".." || /[\\/\0]/.test(seg))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // Non-admins are confined to their own hospital's folder; other hospitals' files are "not found"
+  let baseDir = STORAGE_DIR;
+  if (!isSuperAdmin(ctx.role)) {
+    const hospital = ctx.hospitalId
+      ? await db.hospital.findUnique({ where: { id: ctx.hospitalId }, select: { code: true } })
+      : null;
+    if (!hospital || segments[0] !== hospital.code) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    baseDir = path.join(STORAGE_DIR, hospital.code);
+  }
+
   const filePath = path.resolve(STORAGE_DIR, ...segments);
-  // Reject anything that escapes the storage directory (e.g. "..")
-  if (!filePath.startsWith(STORAGE_DIR + path.sep)) {
+  if (!filePath.startsWith(baseDir + path.sep)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

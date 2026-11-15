@@ -39,11 +39,11 @@ export default function Navbar({ user }: NavbarProps) {
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-800/60 border border-blue-700/50">
           <User className="w-4 h-4 text-blue-300" />
           <span className="text-sm text-white font-medium">{user.name || user.username}</span>
-          {user.role === "ADMIN" && (
-            <Badge className="bg-amber-500 text-white border-0 text-xs px-1.5 py-0">Admin</Badge>
+          {user.role === "SUPER_ADMIN" && (
+            <Badge className="bg-amber-500 text-white border-0 text-xs px-1.5 py-0">Super Admin</Badge>
           )}
         </div>
-        {user.role === "ADMIN" && (
+        {user.role === "SUPER_ADMIN" && (
           <Button
             variant="ghost"
             size="sm"

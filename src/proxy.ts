@@ -23,7 +23,7 @@ export async function proxy(request: NextRequest) {
     }
     try {
       const { payload } = await jwtVerify(token, JWT_SECRET);
-      if (isAdmin && payload.role !== "ADMIN") {
+      if (isAdmin && payload.role !== "SUPER_ADMIN") {
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
     } catch {

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getAuthContext, isSuperAdmin } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
-  const session = await getSession();
-  if (!session) {
+  const ctx = await getAuthContext();
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -15,8 +15,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "insurerId required" }, { status: 400 });
   }
 
-  const insurer = await db.insurer.findUnique({
-    where: { id: insurerId },
+  // Non-admins only see insurers of their own hospital; anything else is reported as not found
+  const insurer = await db.insurer.findFirst({
+    where: { id: insurerId, ...(isSuperAdmin(ctx.role) ? {} : { hospitalId: ctx.hospitalId ?? "" }) },
     select: {
       id: true,
       name: true,
@@ -26,10 +27,11 @@ export async function GET(request: NextRequest) {
       driveUrl: true,
       kind: true,
       selfChannel: true,
+      hospitalId: true,
       tpas: {
         where: { isActive: true },
         orderBy: { sortOrder: "asc" },
-        select: { id: true, name: true, code: true },
+        select: { id: true, name: true, code: true, hospitalId: true },
       },
       isActive: true,
       sortOrder: true,
@@ -45,6 +47,7 @@ export async function GET(request: NextRequest) {
   if (!insurer) {
     return NextResponse.json({ error: "Insurer not found" }, { status: 404 });
   }
+  insurer.tpas = insurer.tpas.filter((t) => t.hospitalId === insurer.hospitalId);
 
   return NextResponse.json({ insurer });
 }
