@@ -12,7 +12,13 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "setup": "npm run db:push && npm run db:seed"
+    "setup": "npm run db:push && npm run db:seed",
+    "scrape:vitraya": "tsx --env-file=.env.local scripts/scrapers/vitraya.ts",
+    "scrape:vitraya:codegen": "node --env-file=.env.local ./node_modules/playwright/cli.js codegen https://vhi.vitraya.com/",
+    "scrape:ihx": "tsx --env-file=.env.local scripts/scrapers/ihx.ts",
+    "scrape": "tsx --env-file=.env.local scripts/scrapers/run.ts",
+    "scrape:selftest": "tsx --env-file=.env.local scripts/scrapers/selftest.ts",
+    "scrape:codegen": "node --env-file=.env.local ./node_modules/playwright/cli.js codegen"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -52,6 +58,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "playwright": "^1.62.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.0",
     "typescript": "^5"

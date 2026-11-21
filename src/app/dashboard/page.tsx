@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Building2, ChevronRight, Loader2, Network } from "lucide-react";
 import HospitalOverview from "@/components/HospitalOverview";
+import LivePortalStats, { type LivePortal } from "@/components/LivePortalStats";
 
 type User = { username: string; name: string; role: string };
 type Hospital = { id: string; name: string; code: string; city: string | null; logoUrl: string | null };
@@ -51,6 +52,7 @@ type InsurerDetail = {
   contacts: Contact[];
   commercials: Commercial[];
   claimsStats: ClaimsStats | null;
+  livePortal: LivePortal | null;
 };
 
 async function fetchDetail(id: string): Promise<InsurerDetail | null> {
@@ -360,6 +362,8 @@ function Dashboard() {
                   </div>
                 ) : (
                   /* Step 3 — TPA portal details */
+                  <div className="space-y-6">
+                  {tpaDetail.livePortal && <LivePortalStats portal={tpaDetail.livePortal} />}
                   <ResourceCards
                     portalUrl={tpaDetail.portalUrl}
                     driveUrl={tpaDetail.driveUrl}
@@ -368,6 +372,7 @@ function Dashboard() {
                     loading={false}
                     insurerName={tpaDetail.name}
                   />
+                  </div>
                 )}
               </>
             )}

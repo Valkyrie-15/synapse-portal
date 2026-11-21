@@ -16,8 +16,9 @@ model Hospital {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  users     User[]
-  insurers  Insurer[]
+  users       User[]
+  insurers    Insurer[]
+  portalStats PortalStats[]
 }
 
 model User {
@@ -118,4 +119,26 @@ model ClaimsStats {
   totalDeniedCases    Int      @default(0)
   updatedAt           DateTime @updatedAt
   insurer             Insurer  @relation(fields: [insurerId], references: [id], onDelete: Cascade)
+}
+
+// Live numbers scraped from a provider portal (one row per hospital + portal, e.g. IHX).
+// A portal login usually covers several insurers/TPAs, so these are portal-wide totals.
+// Null means the portal does not show that figure.
+model PortalStats {
+  id                 String    @id @default(cuid())
+  hospitalId         String
+  portal             String    // key from src/lib/portals.ts, e.g. "IHX"
+  pending            Int?
+  approved           Int?
+  queries            Int?
+  rejected           Int?
+  dischargePending   Int?
+  enhancementPending Int?
+  status             String    @default("OK") // OK | ERROR | BLOCKED (OTP/captcha) | NO_PARSER
+  message            String?
+  scrapedAt          DateTime? // last successful scrape
+  checkedAt          DateTime  @default(now()) // last attempt
+  hospital           Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@unique([hospitalId, portal])
 }

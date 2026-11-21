@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# scraper logs
+/logs
+
 # sqlite
 *.db
 *.db-journal
