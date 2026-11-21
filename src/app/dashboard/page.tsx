@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ResourceCards, { ContactDetails } from "@/components/ResourceCards";
@@ -97,9 +97,6 @@ function Dashboard() {
   const [insurerFor, setInsurerFor] = useState("");
   const [tpa, setTpa] = useState<InsurerDetail | null>(null);
   const [tpaFor, setTpaFor] = useState("");
-  // Bumped after a "Get data" update finishes, to reload the insurer and TPA details
-  const [refreshKey, setRefreshKey] = useState(0);
-  const refreshDetails = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     async function init() {
@@ -142,7 +139,7 @@ function Dashboard() {
       setInsurerFor(insurerId);
     });
     return () => { cancelled = true; };
-  }, [insurerId, refreshKey]);
+  }, [insurerId]);
   const insurerLoading = !!insurerId && insurerFor !== insurerId;
 
   // TPA options: mapped TPAs, plus the insurer itself when it processes claims directly
@@ -370,11 +367,8 @@ function Dashboard() {
                   {tpaDetail.livePortal && (
                     <LivePortalStats
                       portal={tpaDetail.livePortal}
-                      insurerId={insurer.id}
-                      tpaId={tpaDetail.id}
                       insurerName={insurer.name}
                       channelName={isSelf ? "Self (direct)" : tpaDetail.name}
-                      onUpdated={refreshDetails}
                     />
                   )}
                   <ResourceCards

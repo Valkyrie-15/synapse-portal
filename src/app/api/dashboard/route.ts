@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthContext, isSuperAdmin } from "@/lib/auth";
 import { portalForUrl } from "@/lib/portals";
-import { comboKey, expireStaleRun, toPublicStats } from "@/lib/scrape";
+import { comboKey, toPublicStats } from "@/lib/scrape";
 
 export async function GET(request: NextRequest) {
   const ctx = await getAuthContext();
@@ -70,9 +70,7 @@ export async function GET(request: NextRequest) {
   const portal = combo ? portalForUrl(insurer.portalUrl) : null;
   let stats = null;
   if (combo && portal) {
-    const target = { hospitalId: insurer.hospitalId, ...combo };
-    await expireStaleRun(target);
-    stats = await db.portalStats.findUnique({ where: comboKey(target) });
+    stats = await db.portalStats.findUnique({ where: comboKey({ hospitalId: insurer.hospitalId, ...combo }) });
   }
   const livePortal = portal ? { key: portal.key, label: portal.label, stats: toPublicStats(stats) } : null;
 

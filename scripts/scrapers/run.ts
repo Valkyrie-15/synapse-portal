@@ -38,7 +38,7 @@ const option = (name: string) => (args.includes(`--${name}`) ? args[args.indexOf
 const hospitalArg = option("hospital")?.toUpperCase();
 const insurerArg = option("insurer")?.toUpperCase();
 const tpaArg = option("tpa")?.toUpperCase();
-// One specific combination was asked for (e.g. by the Get data button) rather than a sweep of everything
+// One specific combination was asked for (a manual run) rather than the daily sweep of everything
 const TARGETED = !!(insurerArg && tpaArg);
 const optionValues = ["hospital", "insurer", "tpa"].map((n) => option(n));
 const portalArgs = args.filter((a) => !a.startsWith("--") && !optionValues.includes(a)).map((a) => a.toUpperCase());

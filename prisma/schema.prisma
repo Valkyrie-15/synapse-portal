@@ -140,11 +140,11 @@ model PortalStats {
   rejected           Int?
   dischargePending   Int?
   enhancementPending Int?
-  status             String    @default("OK") // OK | RUNNING | ERROR | BLOCKED (OTP/captcha) | NO_PARSER
+  status             String    @default("OK") // OK | ERROR | BLOCKED (OTP/captcha) | NO_PARSER
   message            String?
   scrapedAt          DateTime? // last successful scrape
   checkedAt          DateTime  @default(now()) // last attempt
-  requestedAt        DateTime? // when someone last pressed "Get data"
+  requestedAt        DateTime? // unused (was set by a removed "Get data" button); safe to drop
   hospital           Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   insurer            Insurer   @relation("StatsInsurer", fields: [insurerId], references: [id], onDelete: Cascade)
   channel            Insurer   @relation("StatsChannel", fields: [tpaId], references: [id], onDelete: Cascade)
