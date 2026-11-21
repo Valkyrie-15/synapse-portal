@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthContext, isSuperAdmin } from "@/lib/auth";
 import { portalForUrl } from "@/lib/portals";
+import { comboKey, expireStaleRun, toPublicStats } from "@/lib/scrape";
 
 export async function GET(request: NextRequest) {
   const ctx = await getAuthContext();
@@ -11,6 +12,8 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const insurerId = searchParams.get("insurerId");
+  // When opening a TPA's page: the insurer the user came from, so figures are for that pair only
+  const forInsurerId = searchParams.get("forInsurer");
 
   if (!insurerId) {
     return NextResponse.json({ error: "insurerId required" }, { status: 400 });
@@ -50,30 +53,28 @@ export async function GET(request: NextRequest) {
   }
   insurer.tpas = insurer.tpas.filter((t) => t.hospitalId === insurer.hospitalId);
 
-  // Live figures scraped from this row's portal, for the same hospital
-  const portal = portalForUrl(insurer.portalUrl);
-  const stats = portal
-    ? await db.portalStats.findUnique({ where: { hospitalId_portal: { hospitalId: insurer.hospitalId, portal: portal.key } } })
-    : null;
-  const livePortal = portal
-    ? {
-        key: portal.key,
-        label: portal.label,
-        scope: portal.scope,
-        stats: stats && {
-          pending: stats.pending,
-          approved: stats.approved,
-          queries: stats.queries,
-          rejected: stats.rejected,
-          dischargePending: stats.dischargePending,
-          enhancementPending: stats.enhancementPending,
-          status: stats.status,
-          message: stats.message,
-          scrapedAt: stats.scrapedAt,
-          checkedAt: stats.checkedAt,
-        },
-      }
-    : null;
+  // Live figures belong to one insurer + TPA combination. For an insurer's own page that is its
+  // direct ("Self") channel; for a TPA's page it is the (insurer, TPA) pair the user came through,
+  // and only if that TPA is really mapped to that insurer. Without a combination there are none.
+  let combo: { insurerId: string; channelId: string } | null = null;
+  if (insurer.kind === "INSURER") {
+    if (insurer.selfChannel) combo = { insurerId: insurer.id, channelId: insurer.id };
+  } else if (forInsurerId) {
+    const mapped = await db.insurer.findFirst({
+      where: { id: forInsurerId, hospitalId: insurer.hospitalId, kind: "INSURER", isActive: true, tpas: { some: { id: insurer.id } } },
+      select: { id: true },
+    });
+    if (mapped) combo = { insurerId: mapped.id, channelId: insurer.id };
+  }
+
+  const portal = combo ? portalForUrl(insurer.portalUrl) : null;
+  let stats = null;
+  if (combo && portal) {
+    const target = { hospitalId: insurer.hospitalId, ...combo };
+    await expireStaleRun(target);
+    stats = await db.portalStats.findUnique({ where: comboKey(target) });
+  }
+  const livePortal = portal ? { key: portal.key, label: portal.label, stats: toPublicStats(stats) } : null;
 
   return NextResponse.json({ insurer: { ...insurer, livePortal } });
 }

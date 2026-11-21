@@ -34,7 +34,7 @@ async function attempt(label: string, scraper: PortalScraper, password: string, 
   let result: unknown, error: unknown;
   try {
     await scraper.login(page, { username: "test", password });
-    result = scraper.readStats ? await scraper.readStats(page) : "logged in";
+    result = scraper.readStats ? await scraper.readStats(page, { insurerName: "Test Insurer", channelName: "Test TPA", isSelf: false }) : "logged in";
   } catch (e) {
     error = e;
   }
@@ -50,7 +50,7 @@ server.listen(0, async () => {
   const fakeVolo = { ...volo, loginUrl: `${base}/` };
   const fakeOtp = { ...volo, loginUrl: `${base}/otp` };
   const results = [
-    await attempt("IHX login + tiles", fakeIhx, "right", (r) => JSON.stringify(r) === JSON.stringify({ queries: 7, pending: 12, dischargePending: 5 })),
+    await attempt("IHX login + tiles", fakeIhx, "right", (r) => JSON.stringify(r) === JSON.stringify({ stats: { queries: 7, pending: 12, dischargePending: 5 }, scope: "PORTAL" })),
     await attempt("IHX wrong password", fakeIhx, "wrong", (_r, e) => e instanceof Error && /Login failed/.test(e.message)),
     await attempt("generic login (Volo-style)", fakeVolo, "right", (r) => r === "logged in"),
     await attempt("OTP page is detected, not bypassed", fakeOtp, "right", (_r, e) => e instanceof BlockedError),

@@ -10,6 +10,12 @@ if (-not (Test-Path $LogDir)) {
     New-Item -ItemType Directory -Path $LogDir | Out-Null
 }
 
+# Keep temp files and the npm cache off a full C: drive
+$env:TEMP = "D:/tmp"
+$env:TMP = "D:/tmp"
+$env:npm_config_cache = "D:/npm-cache"
+if (-not (Test-Path $env:TEMP)) { New-Item -ItemType Directory -Path $env:TEMP | Out-Null }
+
 Set-Location $ProjectDir
 
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"

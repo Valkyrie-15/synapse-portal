@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ResourceCards, { ContactDetails } from "@/components/ResourceCards";
@@ -55,8 +55,9 @@ type InsurerDetail = {
   livePortal: LivePortal | null;
 };
 
-async function fetchDetail(id: string): Promise<InsurerDetail | null> {
-  const res = await fetch(`/api/dashboard?insurerId=${id}`);
+// `forInsurer`: when opening a TPA, the insurer the user came through (live figures are per pair)
+async function fetchDetail(id: string, forInsurer?: string): Promise<InsurerDetail | null> {
+  const res = await fetch(`/api/dashboard?insurerId=${id}${forInsurer ? `&forInsurer=${forInsurer}` : ""}`);
   if (!res.ok) return null;
   return (await res.json()).insurer;
 }
@@ -96,6 +97,9 @@ function Dashboard() {
   const [insurerFor, setInsurerFor] = useState("");
   const [tpa, setTpa] = useState<InsurerDetail | null>(null);
   const [tpaFor, setTpaFor] = useState("");
+  // Bumped after a "Get data" update finishes, to reload the insurer and TPA details
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refreshDetails = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     async function init() {
@@ -138,7 +142,7 @@ function Dashboard() {
       setInsurerFor(insurerId);
     });
     return () => { cancelled = true; };
-  }, [insurerId]);
+  }, [insurerId, refreshKey]);
   const insurerLoading = !!insurerId && insurerFor !== insurerId;
 
   // TPA options: mapped TPAs, plus the insurer itself when it processes claims directly
@@ -156,7 +160,7 @@ function Dashboard() {
   useEffect(() => {
     if (!tpaId || !insurer || tpaId === insurer.id) return;
     let cancelled = false;
-    fetchDetail(tpaId).then((data) => {
+    fetchDetail(tpaId, insurer.id).then((data) => {
       if (cancelled) return;
       setTpa(data);
       setTpaFor(tpaId);
@@ -363,7 +367,16 @@ function Dashboard() {
                 ) : (
                   /* Step 3 — TPA portal details */
                   <div className="space-y-6">
-                  {tpaDetail.livePortal && <LivePortalStats portal={tpaDetail.livePortal} />}
+                  {tpaDetail.livePortal && (
+                    <LivePortalStats
+                      portal={tpaDetail.livePortal}
+                      insurerId={insurer.id}
+                      tpaId={tpaDetail.id}
+                      insurerName={insurer.name}
+                      channelName={isSelf ? "Self (direct)" : tpaDetail.name}
+                      onUpdated={refreshDetails}
+                    />
+                  )}
                   <ResourceCards
                     portalUrl={tpaDetail.portalUrl}
                     driveUrl={tpaDetail.driveUrl}

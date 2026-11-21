@@ -56,6 +56,8 @@ model Insurer {
   contacts    Contact[]
   commercials Commercial[]
   claimsStats ClaimsStats?
+  statsAsInsurer PortalStats[] @relation("StatsInsurer")
+  statsAsChannel PortalStats[] @relation("StatsChannel")
 
   @@unique([hospitalId, code])
 }
@@ -121,24 +123,31 @@ model ClaimsStats {
   insurer             Insurer  @relation(fields: [insurerId], references: [id], onDelete: Cascade)
 }
 
-// Live numbers scraped from a provider portal (one row per hospital + portal, e.g. IHX).
-// A portal login usually covers several insurers/TPAs, so these are portal-wide totals.
-// Null means the portal does not show that figure.
+// Live numbers scraped from a provider portal, stored separately for every insurer + TPA
+// combination at a hospital (an insurer's own "Self" channel counts as a combination whose
+// tpaId is the insurer itself). A portal login can report totals for all payers at once, so
+// `scope` says what the numbers cover. Null figures mean the portal does not show them.
 model PortalStats {
   id                 String    @id @default(cuid())
   hospitalId         String
+  insurerId          String    // the insurance company
+  tpaId              String    // the TPA row used; equals insurerId for the insurer's own channel
   portal             String    // key from src/lib/portals.ts, e.g. "IHX"
+  scope              String    @default("PORTAL") // PAYER = this insurer's claims only; PORTAL = whole portal login, not split by insurer
   pending            Int?
   approved           Int?
   queries            Int?
   rejected           Int?
   dischargePending   Int?
   enhancementPending Int?
-  status             String    @default("OK") // OK | ERROR | BLOCKED (OTP/captcha) | NO_PARSER
+  status             String    @default("OK") // OK | RUNNING | ERROR | BLOCKED (OTP/captcha) | NO_PARSER
   message            String?
   scrapedAt          DateTime? // last successful scrape
   checkedAt          DateTime  @default(now()) // last attempt
+  requestedAt        DateTime? // when someone last pressed "Get data"
   hospital           Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  insurer            Insurer   @relation("StatsInsurer", fields: [insurerId], references: [id], onDelete: Cascade)
+  channel            Insurer   @relation("StatsChannel", fields: [tpaId], references: [id], onDelete: Cascade)
 
-  @@unique([hospitalId, portal])
+  @@unique([hospitalId, insurerId, tpaId])
 }

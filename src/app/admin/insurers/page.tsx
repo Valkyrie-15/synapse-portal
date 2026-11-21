@@ -23,6 +23,7 @@ type Insurer = {
   code: string;
   portalUrl: string | null;
   logoUrl: string | null;
+  portalUsername: string | null;
   hospitalId: string;
   hospital: { id: string; name: string; code: string };
   kind: "INSURER" | "TPA";
@@ -36,7 +37,7 @@ type Insurer = {
 type Hospital = { id: string; name: string };
 
 const emptyForm = {
-  hospitalId: "", name: "", code: "", portalUrl: "", logoUrl: "", sortOrder: 0,
+  hospitalId: "", name: "", code: "", portalUrl: "", portalUsername: "", portalPassword: "", logoUrl: "", sortOrder: 0,
   kind: "INSURER" as Insurer["kind"], selfChannel: false, tpaIds: [] as string[],
 };
 
@@ -79,6 +80,8 @@ export default function InsurersAdminPage() {
       name: ins.name,
       code: ins.code,
       portalUrl: ins.portalUrl || "",
+      portalUsername: ins.portalUsername || "",
+      portalPassword: "",
       logoUrl: ins.logoUrl || "",
       sortOrder: ins.sortOrder,
       kind: ins.kind,
@@ -98,6 +101,8 @@ export default function InsurersAdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          // Blank password = keep the stored one
+          portalPassword: form.portalPassword || undefined,
           isActive: editing?.isActive ?? true,
         }),
       });
@@ -379,6 +384,26 @@ export default function InsurersAdminPage() {
                 placeholder="https://..."
                 type="url"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Portal login ID</Label>
+                <Input
+                  value={form.portalUsername}
+                  onChange={(e) => setForm({ ...form, portalUsername: e.target.value })}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Portal password</Label>
+                <Input
+                  value={form.portalPassword}
+                  onChange={(e) => setForm({ ...form, portalPassword: e.target.value })}
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder={editing ? "Leave blank to keep" : ""}
+                />
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Sort Order</Label>

@@ -2,8 +2,10 @@
  * IHX Nucleus provider portal (provider.ihx.in). No OTP/2FA on login.
  *
  * One login covers every payer on the hospital's IHX account (Medi Assist, MD India,
- * Aditya Birla, HDFC Ergo, ...), and the dashboard tiles are account-wide totals,
- * so the numbers are stored once per hospital for the IHX portal.
+ * Aditya Birla, HDFC Ergo, ...), and the dashboard tiles are account-wide totals. They are
+ * saved separately for each insurer + TPA combination but marked scope PORTAL, because the
+ * tiles can't be narrowed to one payer yet. If IHX offers a payer filter, apply it for
+ * `combo.insurerName` in readStats and return scope PAYER.
  *
  * Tile mapping:
  *   Queries Pending                       -> queries
@@ -54,9 +56,12 @@ export const ihx: PortalScraper = {
       return out;
     });
     return {
-      queries: byLabel["Queries Pending"],
-      pending: byLabel["Approval Pending"],
-      dischargePending: byLabel["Awaiting Discharge"],
+      stats: {
+        queries: byLabel["Queries Pending"],
+        pending: byLabel["Approval Pending"],
+        dischargePending: byLabel["Awaiting Discharge"],
+      },
+      scope: "PORTAL",
     };
   },
 };

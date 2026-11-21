@@ -1,0 +1,77 @@
+name: Scrape portal figures
+
+# Runs once a day for every hospital's insurer + TPA combinations, and can also be started for one
+# combination by the "Get data" button in the app (through the GitHub API) or by hand from the
+# Actions tab. It logs into each provider portal, reads the dashboard counts and writes them to the
+# database per combination. Runs on GitHub's servers, so nothing is stored on anyone's computer.
+# Logs only show counts and status messages (no patient data); screenshots are never taken here.
+
+on:
+  schedule:
+    - cron: "30 1 * * *" # every day at 01:30 UTC = 07:00 IST
+  workflow_dispatch:
+    inputs:
+      portal:
+        description: "Only this portal (IHX, HEALTH_INDIA, VOLO_HEALTH, FHPL); empty = all"
+        required: false
+        default: ""
+      hospital:
+        description: "Only this hospital code (e.g. AJINKYATARA); empty = all"
+        required: false
+        default: ""
+      insurer:
+        description: "Only this combination: insurer code (e.g. HDFC_ERGO); needs tpa too"
+        required: false
+        default: ""
+      tpa:
+        description: "Only this combination: TPA code (same as insurer for its own channel)"
+        required: false
+        default: ""
+
+concurrency:
+  group: scrape-${{ github.event.inputs.hospital || 'all' }}-${{ github.event.inputs.insurer || 'all' }}-${{ github.event.inputs.tpa || 'all' }}
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --legacy-peer-deps
+
+      - run: npx prisma generate
+
+      - name: Cache Playwright browser
+        id: browser-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.browser-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - if: steps.browser-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Scrape
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          INPUT_PORTAL: ${{ github.event.inputs.portal }}
+          INPUT_HOSPITAL: ${{ github.event.inputs.hospital }}
+          INPUT_INSURER: ${{ github.event.inputs.insurer }}
+          INPUT_TPA: ${{ github.event.inputs.tpa }}
+        run: |
+          args=()
+          if [ -n "$INPUT_PORTAL" ]; then args+=("$INPUT_PORTAL"); fi
+          if [ -n "$INPUT_HOSPITAL" ]; then args+=(--hospital "$INPUT_HOSPITAL"); fi
+          if [ -n "$INPUT_INSURER" ]; then args+=(--insurer "$INPUT_INSURER"); fi
+          if [ -n "$INPUT_TPA" ]; then args+=(--tpa "$INPUT_TPA"); fi
+          npx tsx scripts/scrapers/run.ts "${args[@]}"

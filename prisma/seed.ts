@@ -13,8 +13,9 @@ type Doc = { code: string; type: string; title: string; url: string };
 type ContactRow = { code: string; name: string; role: string; email: string | null; phone: string | null; mobile: string | null };
 type CommercialRow = { code: string; category: string; description: string; discountPercent: number | null; packageRate: number | null; notes: string };
 type Stats = { code: string; pending: number; approved: number; queries: number; rejected: number; todaysClaims: number; monthlyClaims: number; alReceived: number; enhancementPending: number; dischargePending: number; paymentReceived: number; totalAmountApproved: number; totalAmountReceived: number; totalAmountDeducted: number; totalCasesProcessed: number; totalApprovedCases: number; totalDeniedCases: number };
-// Sample live-portal figures (demo hospitals only; real ones come from `npm run scrape`)
-type PortalRow = { portal: string; pending?: number; approved?: number; queries?: number; rejected?: number; dischargePending?: number; enhancementPending?: number };
+// Sample live-portal figures, one per insurer + TPA combination (demo hospitals only; real ones come from `npm run scrape`).
+// `channel` is the TPA code, or the insurer's own code for its direct ("Self") channel.
+type PortalRow = { insurer: string; channel: string; portal: string; pending?: number; approved?: number; queries?: number; rejected?: number; dischargePending?: number; enhancementPending?: number };
 type HospitalSeed = { removedCodes?: string[]; insurers: Row[]; docs: Doc[]; contacts: ContactRow[]; commercials: CommercialRow[]; claims: Stats[]; portalStats?: PortalRow[] };
 
 // Real documents live in storage/documents/<HOSPITAL>/<INSURER>/ and are served (login required) by /api/files/
@@ -151,9 +152,14 @@ const PULSE: HospitalSeed = {
     demoStats("STAR_HEALTH", 6), demoStats("NIVA_BUPA", 4), demoStats("ICICI_LOMBARD", 3), demoStats("HDFC_ERGO", 2),
     demoStats("MEDI_ASSIST", 5), demoStats("FHPL", 2), demoStats("PARAMOUNT", 1),
   ],
+  // Same numbers across a portal's combinations on purpose: like the real scraper, IHX and FHPL
+  // report one total for the whole login (scope PORTAL), saved separately per combination.
   portalStats: [
-    { portal: "IHX",  pending: 14, queries: 6, dischargePending: 4 },
-    { portal: "FHPL", pending: 5, queries: 2, approved: 31, rejected: 1 },
+    { insurer: "NIVA_BUPA",     channel: "MEDI_ASSIST", portal: "IHX",  pending: 14, queries: 6, dischargePending: 4 },
+    { insurer: "ICICI_LOMBARD", channel: "MEDI_ASSIST", portal: "IHX",  pending: 14, queries: 6, dischargePending: 4 },
+    { insurer: "HDFC_ERGO",     channel: "MEDI_ASSIST", portal: "IHX",  pending: 14, queries: 6, dischargePending: 4 },
+    { insurer: "NIVA_BUPA",     channel: "FHPL",        portal: "FHPL", pending: 5, queries: 2, approved: 31, rejected: 1 },
+    { insurer: "HDFC_ERGO",     channel: "FHPL",        portal: "FHPL", pending: 5, queries: 2, approved: 31, rejected: 1 },
   ],
 };
 
@@ -218,9 +224,15 @@ async function seedHospital(hospitalCode: string, data: HospitalSeed) {
     if (!insurerId) continue;
     await db.claimsStats.upsert({ where: { insurerId }, update: stats, create: { insurerId, ...stats } });
   }
-  for (const { portal, ...figures } of data.portalStats ?? []) {
-    const fields = { ...figures, status: "OK", message: null, scrapedAt: new Date(), checkedAt: new Date() };
-    await db.portalStats.upsert({ where: { hospitalId_portal: { hospitalId, portal } }, update: fields, create: { hospitalId, portal, ...fields } });
+  for (const { insurer, channel, portal, ...figures } of data.portalStats ?? []) {
+    const insurerId = insurers[insurer], tpaId = insurers[channel];
+    if (!insurerId || !tpaId) continue;
+    const fields = { ...figures, portal, scope: "PORTAL", status: "OK", message: null, scrapedAt: new Date(), checkedAt: new Date() };
+    await db.portalStats.upsert({
+      where: { hospitalId_insurerId_tpaId: { hospitalId, insurerId, tpaId } },
+      update: fields,
+      create: { hospitalId, insurerId, tpaId, ...fields },
+    });
   }
 
   console.log(`✅ ${hospital.name}: ${data.insurers.length} insurers/TPAs, ${data.docs.length} documents, ${data.contacts.length} contacts`);
